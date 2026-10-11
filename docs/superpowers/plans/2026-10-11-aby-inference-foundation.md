@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Transformar o fork do Jlama no `aby-inference` (rename, atribuição, build em JDK 21 e 25, CI, release), sem mudar comportamento.
+**Goal:** Transformar o fork do Jlama no `aby-inference` (rename, atribuição, build em JDK 25, CI em Linux, Windows e macOS, publicação), sem mudar comportamento.
 
-**Architecture:** Mudanças mecânicas em commits pequenos e revisáveis. Primeiro limpar o ruído de fim de linha, depois fazer o build funcionar em JDK 21/25 (baseline), só então renomear, para que uma quebra de rename seja distinguível de uma quebra de build. Um teste de fumaça com modelo real prova que o motor e o código nativo continuam funcionando.
+**Architecture:** Mudanças mecânicas em commits pequenos e revisáveis. Primeiro limpar o ruído de fim de linha, depois fazer o build funcionar em JDK 25 (baseline), só então renomear, para que uma quebra de rename seja distinguível de uma quebra de build. Um teste de fumaça com modelo real prova que o motor e o código nativo continuam funcionando.
 
-**Tech Stack:** Java 21/25, Maven (wrapper), JUnit 4, GitHub Actions, GitHub Packages.
+**Tech Stack:** Java 25 (mínimo), Maven (wrapper), JUnit 4, GitHub Actions, GitHub Packages.
 
 **Spec:** `docs/superpowers/specs/2026-10-11-aby-inference-foundation-design.md`
 
@@ -16,7 +16,7 @@
 - `groupId`: `ao.bitubi.aby-inference`; `artifactId`s: `aby-inference-parent`, `aby-inference-core`, `aby-inference-native`, `aby-inference-net`, `aby-inference-cli`, `aby-inference-tests`.
 - CLI: comando `aby`; classe principal `ao.bitubi.aby.inference.cli.AbyCli` (hoje `JlamaCli`).
 - Versão: `<revision>` = `0.1.0-SNAPSHOT`.
-- JDKs suportados: 21 e 25 (LTS). JDK 20 e 22 deixam de ser suportados.
+- JDK mínimo e único alvo: 25 (LTS). JDK 20, 21 e 22 deixam de ser suportados. A CI roda em Linux, Windows e macOS, sempre com JDK 25.
 - Atribuição Apache 2.0: manter `LICENSE`; criar `NOTICE`; preservar cabeçalhos de copyright originais; marcar arquivos modificados; não usar nome/marca do autor original para sugerir endosso.
 - Organização GitHub: `bitubi-solutions`; `upstream` aponta para `tjake/jlama`.
 - Ids de modelo do Hugging Face (`tjake/...`) são nomes externos e permanecem; idem o clone `tjake/sdkman-for-toolchains` no Dockerfile.
@@ -26,9 +26,9 @@
 
 1. Caminho de arquivo com espaço, `$` ou CRLF no rename mecânico: arquivos `constants$0.java` (nomes com `$`) devem ser movidos e referenciados corretamente.
 2. Referência ao pacote antigo em string (nome de logger em `logback*.xml`, `package` do `.proto`, `apiPackage` no `jlama-net/pom.xml`, `Main-Class` no manifesto): o rename não pode deixá-las apontando para classes inexistentes (falha só em runtime).
-3. JAR multi-release do `jlama-native` sem as classes `java21/`/`java22/` corretas: o motor cai silenciosamente para o caminho sem código nativo (mais lento), sem erro de build.
+3. JAR multi-release do `jlama-native` sem as classes `java25/` (`META-INF/versions/25`): o motor cai silenciosamente para o caminho sem código nativo (mais lento), sem erro de build.
 4. Binário nativo e classificador `${os.detected.name}-${os.detected.arch}` em macOS e Windows: o rename não deve quebrar `jlama-native` fora do Linux.
-5. Execução no JDK 21 de bytecode compilado no JDK 25 (`NoSuchMethodError` na Vector API, que muda entre rodadas de incubação).
+5. Usuário com JDK 26 ou superior: a Vector API muda entre rodadas de incubação e pode dar `NoSuchMethodError`. Só o JDK 25 é testado; registrar isso no README.
 
 ---
 
@@ -80,32 +80,28 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 2: Build e testes verdes em JDK 21 e 25 (baseline antes do rename)
+### Task 2: Build e testes verdes em JDK 25 (baseline antes do rename)
 
 **Files:**
 - Modify: `pom.xml` (compiler e surefire, linhas ~118-205)
 - Modify: `jlama-native/pom.xml` (execuções `compile-jdk20/21/22`)
-- Delete: `jlama-native/src/main/java20/`
+- Delete: `jlama-native/src/main/java20/`, `jlama-native/src/main/java21/`
+- Rename: `jlama-native/src/main/java22/` para `jlama-native/src/main/java25/`
 - Modify: `run-cli.sh`, `run-cli.bat` (verificação de versão do JDK)
 - Create (local, não versionado): `~/.m2/toolchains.xml`
 
 **Interfaces:**
-- Produces: `./mvnw -B verify` verde com toolchains 21 e 25; execução de testes no 21 e no 25 (ids de execução `jdk21-test` e `jdk25-test`).
+- Produces: `./mvnw -B verify` verde com um único toolchain, JDK 25 (o mínimo suportado); testes executados no JDK 25 (execução `default-test`).
 
-Contexto: hoje o build exige toolchains JDK 20, 21 e 22 (não instalados nesta máquina: há 21, 24 e 25 em `~/.sdkman/candidates/java`). O `jlama-native` compila fontes por versão: `java20/` e `java21/` usam FFM em preview, `java22/` usa FFM final.
+Contexto: hoje o build exige toolchains JDK 20, 21 e 22 (não instalados nesta máquina: há 21, 24 e 25 em `~/.sdkman/candidates/java`). O `jlama-native` compila fontes por versão: `java20/` e `java21/` usam FFM em preview, `java22/` usa FFM final. Com o JDK 25 como mínimo, só o último fica; ele passa a se chamar `java25/` (o JAR multi-release usa `META-INF/versions/25`).
 
-- [ ] **Step 1: Criar toolchains locais**
+- [ ] **Step 1: Criar toolchain local**
 
 Crie `~/.m2/toolchains.xml`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <toolchains>
-  <toolchain>
-    <type>jdk</type>
-    <provides><version>21</version></provides>
-    <configuration><jdkHome>/home/dumi/.sdkman/candidates/java/21.0.10-amzn</jdkHome></configuration>
-  </toolchain>
   <toolchain>
     <type>jdk</type>
     <provides><version>25</version></provides>
@@ -117,17 +113,18 @@ Crie `~/.m2/toolchains.xml`:
 - [ ] **Step 2: Provar que o build atual falha (baseline)**
 
 Run: `./mvnw -B -DskipTests package 2>&1 | tail -15`
-Expected: FAIL com erro de toolchain (`Cannot find matching toolchain definitions ... jdk [ version='20' ]` ou `'22'`).
+Expected: FAIL com erro de toolchain (`Cannot find matching toolchain definitions ... jdk [ version='20' ]`, `'21'` ou `'22'`).
 
-- [ ] **Step 3: Remover o suporte ao JDK 20**
+- [ ] **Step 3: Remover JDK 20 e 21 e renomear o diretório do 22**
 
 ```bash
-git rm -r jlama-native/src/main/java20
+git rm -r jlama-native/src/main/java20 jlama-native/src/main/java21
+git mv jlama-native/src/main/java22 jlama-native/src/main/java25
 ```
 
-Em `jlama-native/pom.xml`, apague a `<execution>` inteira com `<id>compile-jdk20</id>`.
+Em `jlama-native/pom.xml`, apague as `<execution>` inteiras com `<id>compile-jdk20</id>` e `<id>compile-jdk21</id>`. Na execução `compile-jdk22`, troque `<id>` para `compile-jdk25`, `<release>22</release>` por `<release>25</release>`, o `<jdkToolchain><version>22</version></jdkToolchain>` por `<version>25</version>`, o `<compileSourceRoot>` para `${project.basedir}/src/main/java25` e remova `<arg>--enable-preview</arg>` (FFM é final desde o 22, e `--release 25` com `--enable-preview` não é necessário aqui).
 
-- [ ] **Step 4: Compilar a base e o `java22/` com o JDK 25**
+- [ ] **Step 4: Compilar a base com o JDK 25**
 
 Em `pom.xml`, no `maven-compiler-plugin`, troque:
 
@@ -143,52 +140,49 @@ Em `pom.xml`, no `maven-compiler-plugin`, troque:
 por:
 
 ```xml
-<source>21</source>
-<target>21</target>
+<source>25</source>
+<target>25</target>
 ...
 <jdkToolchain>
   <version>25</version>
 </jdkToolchain>
 ```
 
-Em `jlama-native/pom.xml`, na execução `compile-jdk22`, troque `<jdkToolchain><version>22</version></jdkToolchain>` por `<version>25</version>` e remova `<arg>--enable-preview</arg>` dessa execução (FFM é final desde o 22; `--release 22` com `--enable-preview` não é aceito no JDK 25). Mantenha `<release>22</release>`.
+- [ ] **Step 5: Surefire só no JDK 25**
 
-- [ ] **Step 5: Surefire em 21 e 25**
+Em `pom.xml`, deixe uma única `<execution>`, a `default-test`, com `<jdkToolchain><version>25</version></jdkToolchain>`; apague as execuções `jdk21-test` e `jdk22-test`. Mantenha o mesmo `argLine` (inclui `--enable-preview`).
 
-Em `pom.xml`, apague a `<execution>` `default-test` (JDK 20) e a `jdk22-test`; troque a `jdk21-test` para manter `<version>21</version>`; adicione `jdk25-test` copiando o bloco da `jdk21-test` com `<id>jdk25-test</id>` e `<version>25</version>`. Mantenha o mesmo `argLine` (inclui `--enable-preview`).
+- [ ] **Step 6: Ajustar `run-cli.sh` e `run-cli.bat`**
 
-- [ ] **Step 6: Ajustar `run-cli.sh`**
-
-Substitua o bloco de verificação de versão por:
+Em `run-cli.sh`, substitua o bloco de verificação de versão por:
 
 ```bash
-# Verify Java version is JDK 21 or newer
+# Verify Java version is JDK 25 or newer
 JAVA=$(get_java_exec)
 JAVA_MAJOR_VERSION=$(get_java_major_version $JAVA)
-if [[ "$JAVA_MAJOR_VERSION" -lt 21 ]]; then
-  echo "Error: JDK 21 or newer is required to run this application."
+if [[ "$JAVA_MAJOR_VERSION" -lt 25 ]]; then
+  echo "Error: JDK 25 or newer is required to run this application."
   exit 1
 fi
 ```
 
-Faça o equivalente em `run-cli.bat` (compare a versão principal com 21).
+Faça o equivalente em `run-cli.bat` (compare a versão principal com 25).
 
 - [ ] **Step 7: Build com JDK 25 como `JAVA_HOME`**
 
 Run: `JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B -DskipTests package 2>&1 | tail -20`
-Expected: `BUILD SUCCESS`. Se `jlama-native` falhar ao compilar o `java21/` (preview) ou o `java22/`, leia o erro: corrija só a flag/`release` em questão; não altere código Java.
+Expected: `BUILD SUCCESS`. Se o `jlama-native` falhar ao compilar o `java25/`, leia o erro: corrija só a flag/`release` em questão; não altere código Java. Confirme o JAR multi-release: `unzip -l jlama-native/target/jlama-native-*-linux-x86_64.jar | grep "META-INF/versions/25"` deve listar classes `cnative`.
 
-- [ ] **Step 8: Rodar os testes nos dois JDKs**
+- [ ] **Step 8: Rodar os testes**
 
-Run: `JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B test 2>&1 | grep -E "Tests run:|BUILD|jdk21-test|jdk25-test" | tail -15`
-Expected: `BUILD SUCCESS`; as duas execuções (`jdk21-test`, `jdk25-test`) aparecem. Testes dependentes de modelos em `../models/` são pulados por `Assume` (não contam como falha).
-Se aparecer `NoSuchMethodError` em `jdk.incubator.vector` na execução do 21, registre em `docs/superpowers/notes/build-jdk.md` (Review Focus 5) e compile o módulo `jlama-core` com toolchain 21 em vez de 25 (`<version>21</version>` no compilador do pai), mantendo o `java22/` do native no 25.
+Run: `JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B test 2>&1 | grep -E "Tests run:|BUILD" | tail -15`
+Expected: `BUILD SUCCESS`. Testes dependentes de modelos em `../models/` são pulados por `Assume` (não contam como falha).
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add pom.xml jlama-native/pom.xml run-cli.sh run-cli.bat
-git commit -m "build: suporta JDK 21 e 25, remove JDK 20 e 22
+git add -A pom.xml jlama-native run-cli.sh run-cli.bat
+git commit -m "build: exige JDK 25, remove suporte a JDK 20, 21 e 22
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
@@ -202,7 +196,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: `Downloader(String workingDirectory, String model).huggingFaceModel()`, `ModelSupport.loadModel(File, DType, DType)`, `AbstractModel.generate(UUID, PromptContext, float, int, BiConsumer)` (como em `TestSample.java`).
-- Produces: `SmokeTest.generatesSameTokensAsReference` e as referências `smoke-golden-21.txt` e `smoke-golden-25.txt` em `jlama-tests/src/test/resources/`; o teste prova que o motor e o nativo produzem a mesma saída após o rename.
+- Produces: `SmokeTest.generatesSameTokensAsReference` e a referência `smoke-golden-25.txt` em `jlama-tests/src/test/resources/`; o teste prova que o motor e o nativo produzem a mesma saída após o rename.
 
 - [ ] **Step 1: Ver como `TestSample.java` baixa e carrega o modelo**
 
@@ -211,7 +205,7 @@ Expected: usa `Downloader` e `ModelSupport.loadModel` com `tjake/Qwen2.5-0.5B-In
 
 - [ ] **Step 2: Escrever o teste (com comparação contra uma saída de referência)**
 
-Com temperatura 0 a geração é determinística na mesma máquina. O teste compara o texto gerado com um arquivo de referência por versão do JDK (`smoke-golden-21.txt`, `smoke-golden-25.txt`), porque os resultados de ponto flutuante podem diferir entre JDKs. Com `SMOKE_RECORD=1` ele grava a referência em vez de comparar.
+Com temperatura 0 a geração é determinística na mesma máquina. O teste compara o texto gerado com um arquivo de referência (`smoke-golden-25.txt`, nomeado pela versão do JDK). A referência vale só para a máquina onde foi gravada: o ponto flutuante pode diferir em outra CPU ou SO. Com `SMOKE_RECORD=1` ele grava a referência em vez de comparar.
 
 ```java
 /*
@@ -274,20 +268,20 @@ Ajuste os imports de `Downloader` se o pacote real diferir (veja o `import` em `
 
 - [ ] **Step 3: Gravar as referências (antes de qualquer rename)**
 
-Execute uma vez por JDK. O Surefire roda as execuções 21 e 25 na mesma chamada, e cada uma grava o seu arquivo:
+Execute uma vez, na sua máquina:
 
 Run: `SMOKE_MODEL=1 SMOKE_RECORD=1 JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B -pl jlama-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -E "Tests run|BUILD"; ls jlama-tests/src/test/resources/smoke-golden-*`
-Expected: `BUILD SUCCESS` e os dois arquivos `smoke-golden-21.txt` e `smoke-golden-25.txt`, ambos não vazios. (Baixa ~500 MB na primeira vez.) Se o download falhar (modelo removido do Hugging Face), troque o id por outro modelo pequeno que exista e anote no commit. Leia os dois arquivos: se o texto do 21 e do 25 diferir, isso é esperado e fica registrado; se estiver sem sentido (lixo), pare e investigue antes de seguir.
+Expected: `BUILD SUCCESS` e o arquivo `smoke-golden-25.txt`, não vazio. (Baixa ~500 MB na primeira vez.) Se o download falhar (modelo removido do Hugging Face), troque o id por outro modelo pequeno que exista e anote no commit. Leia o arquivo: se o texto estiver sem sentido (lixo), pare e investigue antes de seguir.
 
 - [ ] **Step 4: Rodar em modo de comparação**
 
 Run: `SMOKE_MODEL=1 JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B -pl jlama-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -E "Tests run|BUILD"`
-Expected: `Tests run: 1, Failures: 0` nas duas execuções e `BUILD SUCCESS`. Rodar duas vezes seguidas deve passar nas duas (confirma o determinismo).
+Expected: `Tests run: 1, Failures: 0` e `BUILD SUCCESS`. Rodar duas vezes seguidas deve passar nas duas (confirma o determinismo).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add jlama-tests/src/test/java/com/github/tjake/jlama/model/SmokeTest.java jlama-tests/src/test/resources/smoke-golden-21.txt jlama-tests/src/test/resources/smoke-golden-25.txt
+git add jlama-tests/src/test/java/com/github/tjake/jlama/model/SmokeTest.java jlama-tests/src/test/resources/smoke-golden-25.txt
 git commit -m "test: teste de fumaça com saída de referência
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
@@ -389,7 +383,7 @@ Run: `chmod +x docs/benchmarks/run-perf.sh`
 - [ ] **Step 3: Medir e registrar**
 
 Run: `docs/benchmarks/run-perf.sh /home/dumi/.sdkman/candidates/java/25.0.3-amzn | tee /tmp/perf-before.txt`
-Expected: duas linhas `PERF jdk=21 ...` e `PERF jdk=25 ...` e `BUILD SUCCESS`. Rode três vezes e anote a variação. Crie `docs/benchmarks/baseline-<hardware>.md` (escolha `<hardware>` pelo modelo da CPU, em minúsculas e com hifens) com: o bloco de hardware impresso pelo script, o commit (`git rev-parse --short HEAD`), o JDK, as três execuções e a faixa de variação observada (mín.-máx.). Esta variação define a tolerância usada na Task 4.
+Expected: uma linha `PERF jdk=25 ...` e `BUILD SUCCESS`. Rode três vezes e anote a variação. Crie `docs/benchmarks/baseline-<hardware>.md` (escolha `<hardware>` pelo modelo da CPU, em minúsculas e com hifens) com: o bloco de hardware impresso pelo script, o commit (`git rev-parse --short HEAD`), o JDK, as três execuções e a faixa de variação observada (mín.-máx.). Esta variação define a tolerância usada na Task 4.
 
 - [ ] **Step 4: Commit**
 
@@ -405,7 +399,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ### Task 4: Rename mecânico (pacote, groupId, artefatos, CLI)
 
 **Files:**
-- Move: todos os diretórios `.../com/github/tjake/jlama/` para `.../ao/bitubi/aby/inference/` (em `jlama-core`, `jlama-native` (`java/`, `java21/`, `java22/`), `jlama-net`, `jlama-cli`, `jlama-tests`)
+- Move: todos os diretórios `.../com/github/tjake/jlama/` para `.../ao/bitubi/aby/inference/` (em `jlama-core`, `jlama-native` (`java/`, `java25/`), `jlama-net`, `jlama-cli`, `jlama-tests`)
 - Modify: todos os arquivos que contêm `com.github.tjake` (lista: `grep -rl`)
 - Modify: `pom.xml`, `jlama-*/pom.xml`, `jlama-net/src/main/proto/JlamaService.proto`, `jlama-tests/src/test/resources/logback-test.xml`, `conf/logback.xml`, `.run/*.xml`
 - Rename: classe `JlamaCli` para `AbyCli`
@@ -489,9 +483,9 @@ Expected: `BUILD SUCCESS`. Se o `jlama-core` falhar por `module-info`/recurso co
 Não grave novas referências: o teste compara com as gravadas antes do rename (Task 3).
 
 Run: `SMOKE_MODEL=1 JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B -pl aby-inference-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -E "Tests run|BUILD"`
-Expected: `Tests run: 1, Failures: 0` nas execuções 21 e 25, ou seja, o texto gerado é idêntico ao de antes do rename. Se falhar com diferença de texto, o rename quebrou algo (provavelmente o caminho nativo); não regrave a referência.
+Expected: `Tests run: 1, Failures: 0` e `BUILD SUCCESS`, ou seja, o texto gerado é idêntico ao de antes do rename. Se falhar com diferença de texto, o rename quebrou algo (provavelmente o caminho nativo); não regrave a referência.
 
-Em seguida confirme que o caminho nativo carrega: `unzip -l aby-inference-native/target/aby-inference-native-*-linux-x86_64.jar | grep -E "META-INF/versions/(21|22)/ao/bitubi"` deve listar classes `cnative` (Review Focus 3).
+Em seguida confirme que o caminho nativo carrega: `unzip -l aby-inference-native/target/aby-inference-native-*-linux-x86_64.jar | grep -E "META-INF/versions/25/ao/bitubi"` deve listar classes `cnative` (Review Focus 3).
 
 - [ ] **Step 9: Comparação de desempenho**
 
@@ -581,16 +575,38 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 6: CI no GitHub Actions (JDK 21 e 25)
+### Task 6: CI no GitHub Actions (JDK 25 em Linux, Windows e macOS)
 
 **Files:**
 - Modify: `.github/workflows/unit-tests.yaml`
+- Modify: `docs/benchmarks/run-perf.sh` (hardware por SO)
 
 **Interfaces:**
-- Consumes: build verde (Task 2) e `SmokeTest` (Task 3).
-- Produces: workflow `Unit Test CI` rodando em `ubuntu-latest`, `windows-latest`, `macos-latest`.
+- Consumes: build verde (Task 2), `SmokeTest` (Task 3) e `PerfBaselineTest` (Task 3b).
+- Produces: workflow `Unit Test CI` rodando em `ubuntu-latest`, `windows-latest`, `macos-latest` (ARM) e um runner macOS Intel, todos com JDK 25; resumo de desempenho por SO.
 
-- [ ] **Step 1: Substituir o workflow**
+- [ ] **Step 1: Tornar `run-perf.sh` portável (Linux, macOS e Windows/Git Bash)**
+
+Substitua o bloco `== hardware ==` do script por:
+
+```bash
+echo "== hardware =="
+case "$(uname -s)" in
+  Linux)
+    lscpu | grep -E "Model name|^CPU\(s\)"
+    grep -o -w -E "avx512[a-z_]*|avx2|avx|fma" /proc/cpuinfo | sort -u | tr '\n' ' '; echo ;;
+  Darwin)
+    sysctl -n machdep.cpu.brand_string
+    echo "CPUs: $(sysctl -n hw.ncpu) arch: $(uname -m)" ;;
+  MINGW*|MSYS*|CYGWIN*)
+    echo "${PROCESSOR_IDENTIFIER:-unknown}"
+    echo "CPUs: ${NUMBER_OF_PROCESSORS:-?}" ;;
+esac
+```
+
+E troque a primeira linha de argumentos para aceitar `JAVA_HOME` do ambiente: `JDK_HOME="${1:-$JAVA_HOME}"`.
+
+- [ ] **Step 2: Substituir o workflow**
 
 ```yaml
 name: Unit Test CI
@@ -612,43 +628,54 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ ubuntu-latest, windows-latest, macos-latest, macos-15-intel ]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 21 and 25
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: |
-            21
-            25
+          java-version: 25
           distribution: temurin
           mvn-toolchain-vendor: Eclipse Adoptium
           cache: maven
-      - name: Compile, run tests, and package (JDK 21 and 25)
+      - name: Compile, run tests, and package (JDK 25)
         run: ./mvnw -B package
+      - name: Cache small model
+        uses: actions/cache@v4
+        with:
+          path: aby-inference-tests/models
+          key: small-model-qwen2.5-0.5b-jq4
       - name: Smoke test with a small model
-        if: startsWith(matrix.os, 'ubuntu')
         env:
           SMOKE_MODEL: "1"
           SMOKE_RELAXED: "1"
         run: ./mvnw -B -pl aby-inference-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Performance snapshot (informational)
+        run: |
+          docs/benchmarks/run-perf.sh "$JAVA_HOME" | tee perf.txt
+          { echo '### Desempenho em ${{ matrix.os }}'; echo '```'; cat perf.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 ```
 
-(A CI usa `SMOKE_RELAXED=1`: as referências de texto foram gravadas num hardware específico e o ponto flutuante pode diferir em outra CPU, então na CI o teste só exige texto não vazio. A comparação estrita roda localmente nas Tasks 3 e 4.)
+Notas:
+- `SMOKE_RELAXED=1` na CI: as referências de texto foram gravadas na sua máquina e o ponto flutuante pode diferir em outra CPU ou SO, então a CI só exige texto não vazio. A comparação estrita roda localmente (Tasks 3 e 4).
+- O passo de desempenho é informativo (não falha o job): serve para coletar o baseline do Windows e do macOS. Depois da primeira execução verde, copie as linhas `PERF` de cada SO do resumo do job para `docs/benchmarks/baseline-ci-<os>.md`.
+- `macos-latest` é ARM (arm64); `macos-15-intel` é x86_64. **Confirme em https://docs.github.com/actions/using-github-hosted-runners que o rótulo `macos-15-intel` existe**; se não existir, remova-o e registre que macOS Intel não é testado.
+- Se o `aby-inference-native` não compilar em Windows ou em macOS ARM (o `Makefile` usa `gcc`/`make`/`ld`), a falha deve aparecer aqui. Não a esconda com `continue-on-error`: abra uma task própria para o suporte nativo naquele SO.
 
-(Em `macos-latest` o runner é ARM; `macos-13`, x86, foi removido. Se o `aby-inference-native` não compilar em ARM, registre e ajuste o `Makefile` em uma task própria; não esconda a falha.)
-
-- [ ] **Step 2: Validar a sintaxe**
+- [ ] **Step 3: Validar a sintaxe**
 
 Run: `python3 -c "import yaml,sys; yaml.safe_load(open('.github/workflows/unit-tests.yaml')); print('ok')"`
 Expected: `ok`.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add .github/workflows/unit-tests.yaml
-git commit -m "ci: matriz JDK 21 e 25 e teste de fumaça
+git add .github/workflows/unit-tests.yaml docs/benchmarks/run-perf.sh
+git commit -m "ci: JDK 25 em Linux, Windows e macOS, com teste de fumaça e desempenho
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
@@ -697,9 +724,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          java-version: |
-            21
-            25
+          java-version: 25
           distribution: temurin
           mvn-toolchain-vendor: Eclipse Adoptium
           cache: maven
@@ -744,7 +769,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 # Contribuindo
 
 1. Faça um fork e crie uma branch.
-2. Rode `./mvnw verify` com JDK 21 ou 25.
+2. Rode `./mvnw verify` com JDK 25.
 3. Assine seus commits com `git commit -s` (Developer Certificate of Origin,
    https://developercertificate.org/). PRs sem `Signed-off-by` não serão aceitos.
 4. Abra o PR descrevendo o que mudou e como testou.
@@ -796,6 +821,6 @@ Troque `<revision>` para `0.1.0`, faça commit, crie a tag `v0.1.0` e execute o 
 
 ## Self-Review
 
-- **Spec coverage:** passo 1 do spec (fim de linha) = Task 1; passo 2 (migrar) = Task 8 Step 5; passo 3 (rename) = Task 4; passo 4 (atribuição) = Task 5; passo 5 (build e CI) = Tasks 2 e 6; passo 6 (publicação) = Tasks 7 e 8 Step 6; passo 7 (governança) = Task 8. Critério de pronto: `verify` verde (Tasks 2, 4, 8), `grep tjake` (Task 5 Step 6), artefato no GitHub Packages (Task 8 Step 6), comparação de saída (Tasks 3 e 4), comparação de desempenho com o baseline (Tasks 3b e 4), teste de fumaça na CI (Task 6).
+- **Spec coverage:** passo 1 do spec (fim de linha) = Task 1; passo 2 (migrar) = Task 8 Step 5; passo 3 (rename) = Task 4; passo 4 (atribuição) = Task 5; passo 5 (build e CI) = Tasks 2 e 6; passo 6 (publicação) = Tasks 7 e 8 Step 6; passo 7 (governança) = Task 8. Critério de pronto: `verify` verde em JDK 25 (Tasks 2, 4, 8), `grep tjake` (Task 5 Step 6), artefato no GitHub Packages (Task 8 Step 6), comparação de saída (Tasks 3 e 4), comparação de desempenho com o baseline (Tasks 3b e 4), CI verde em Linux, Windows e macOS (Task 6).
 - **Divergência do spec:** o critério "`grep -ri tjake` não retorna nada" foi relaxado para permitir ids de modelo do Hugging Face e o clone `sdkman-for-toolchains` (nomes externos). O spec deve ser atualizado com esta ressalva.
-- **Pontos que não pude verificar sem executar:** se o código `java21/` (FFM preview) compila e roda num build com JDK 25; se `macos-latest` (ARM) compila o `jlama-native`; a versão atual do `central-publishing-maven-plugin`; a existência do modelo do teste de fumaça no Hugging Face. Cada um tem um passo de verificação e fallback nas tasks acima.
+- **Pontos que não pude verificar sem executar:** se o `jlama-native` compila em Windows e em macOS (ARM e Intel; o `Makefile` usa `gcc`, `make` e `ld`); se o rótulo de runner `macos-15-intel` existe; a existência do modelo do teste de fumaça no Hugging Face. Cada um tem um passo de verificação e fallback nas tasks acima.
