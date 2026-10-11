@@ -121,13 +121,14 @@
                 <!-- We compile with highest jdk to lowest supported target, this is the best compatibility -->
                 <configuration>
 
-                  <source>20</source>
-                  <target>20</target>
+                  <!-- bytecode 21: o Spring Boot 3.3.x (ASM) nao le classes 25; subir para 25 junto com o upgrade do Spring (sub-projeto 2). O JDK 25 segue como unico JDK de build, teste e execucao. -->
+                  <source>21</source>
+                  <target>21</target>
                   <compilerArgs>
                     <arg>--add-modules=jdk.incubator.vector</arg>
                   </compilerArgs>
                   <jdkToolchain>
-                    <version>22</version>
+                    <version>25</version>
                   </jdkToolchain>
                 </configuration>
 
@@ -147,7 +148,7 @@
               </goals>
               <configuration>
                 <jdkToolchain>
-                    <version>20</version>
+                    <version>25</version>
                 </jdkToolchain>
                 <forkCount>1</forkCount>
                 <argLine>
@@ -157,48 +158,6 @@
                 --enable-native-access=ALL-UNNAMED
                 --add-exports java.base/jdk.internal.vm.vector=ALL-UNNAMED
                 -Djava.library.path=../jlama-native/target/native-lib-only
-                </argLine>
-              </configuration>
-            </execution>
-            <execution>
-              <id>jdk21-test</id>
-              <phase>test</phase>
-              <goals>
-                <goal>test</goal>
-              </goals>
-              <configuration>
-                <jdkToolchain>
-                  <version>21</version>
-                </jdkToolchain>
-                <forkCount>1</forkCount>
-                <argLine>
-                  --add-modules=jdk.incubator.vector
-                  --add-exports java.base/sun.nio.ch=ALL-UNNAMED
-                  --enable-preview
-                  --enable-native-access=ALL-UNNAMED
-                  --add-exports java.base/jdk.internal.vm.vector=ALL-UNNAMED
-                  -Djava.library.path=../jlama-native/target/native-lib-only
-                </argLine>
-              </configuration>
-            </execution>
-            <execution>
-              <id>jdk22-test</id>
-              <phase>test</phase>
-              <goals>
-                <goal>test</goal>
-              </goals>
-              <configuration>
-                <jdkToolchain>
-                  <version>22</version>
-                </jdkToolchain>
-                <forkCount>1</forkCount>
-                <argLine>
-                  --add-modules=jdk.incubator.vector
-                  --add-exports java.base/sun.nio.ch=ALL-UNNAMED
-                  --enable-preview
-                  --enable-native-access=ALL-UNNAMED
-                  --add-exports java.base/jdk.internal.vm.vector=ALL-UNNAMED
-                  -Djava.library.path=../jlama-native/target/native-lib-only
                 </argLine>
               </configuration>
             </execution>

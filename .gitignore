@@ -5,3 +5,4 @@ models/*
 .flattened-pom.xml
 */target/*
 tensor_debug.log
+**/models/
