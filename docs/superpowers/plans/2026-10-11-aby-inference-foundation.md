@@ -20,6 +20,7 @@
 - Atribuição Apache 2.0: manter `LICENSE`; criar `NOTICE`; preservar cabeçalhos de copyright originais; marcar arquivos modificados; não usar nome/marca do autor original para sugerir endosso.
 - Organização GitHub: `bitubi-solutions`; `upstream` aponta para `tjake/jlama`.
 - Ids de modelo do Hugging Face (`tjake/...`) são nomes externos e permanecem; idem o clone `tjake/sdkman-for-toolchains` no Dockerfile.
+- Nunca adicionar trailers do Claude (`Co-Authored-By`, `Claude-Session`) em commits ou PRs (regra do autor).
 - Nenhuma mudança de lógica do motor. Cada task termina com o build verde.
 
 ## Review Focus
@@ -74,8 +75,6 @@ Expected: apenas `A  .gitattributes` (nenhum arquivo `M`). Se aparecerem `M`, ro
 
 ```bash
 git commit -m "chore: normaliza fim de linha com .gitattributes
-
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -183,8 +182,6 @@ Expected: `BUILD SUCCESS`. Testes dependentes de modelos em `../models/` são pu
 ```bash
 git add -A pom.xml jlama-native run-cli.sh run-cli.bat
 git commit -m "build: exige JDK 25, remove suporte a JDK 20, 21 e 22
-
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -283,8 +280,6 @@ Expected: `Tests run: 1, Failures: 0` e `BUILD SUCCESS`. Rodar duas vezes seguid
 ```bash
 git add jlama-tests/src/test/java/com/github/tjake/jlama/model/SmokeTest.java jlama-tests/src/test/resources/smoke-golden-25.txt
 git commit -m "test: teste de fumaça com saída de referência
-
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -390,8 +385,6 @@ Expected: uma linha `PERF jdk=25 ...` e `BUILD SUCCESS`. Rode três vezes e anot
 ```bash
 git add jlama-tests/src/test/java/com/github/tjake/jlama/model/PerfBaselineTest.java docs/benchmarks
 git commit -m "test: baseline de desempenho (tokens/s) antes do rename
-
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -497,8 +490,6 @@ Expected: `prefill_tok_s` e `decode_tok_s` dentro da faixa mín.-máx. registrad
 ```bash
 git add -A
 git commit -m "refactor: renomeia para aby-inference (pacote, groupId, artefatos, CLI)
-
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -569,8 +560,6 @@ Expected: somente linhas legítimas (`NOTICE`, README "Origem", cabeçalhos de c
 ```bash
 git add -A
 git commit -m "docs: adiciona NOTICE e atribuição ao Jlama original
-
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -676,8 +665,6 @@ Expected: `ok`.
 ```bash
 git add .github/workflows/unit-tests.yaml docs/benchmarks/run-perf.sh
 git commit -m "ci: JDK 25 em Linux, Windows e macOS, com teste de fumaça e desempenho
-
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -749,8 +736,6 @@ Expected: `BUILD SUCCESS` (gera sources e javadoc). Não rode `deploy` localment
 ```bash
 git add pom.xml .github/workflows/release.yaml
 git commit -m "build: publica no GitHub Packages
-
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -792,8 +777,6 @@ Expected: `BUILD SUCCESS`.
 ```bash
 git add -A
 git commit -s -m "docs: adiciona CONTRIBUTING com DCO e templates
-
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
 
 - [ ] **Step 5: Migrar o repositório (ação do dono; confirme antes)**
