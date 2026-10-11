@@ -86,7 +86,7 @@ git commit -m "chore: normaliza fim de linha com .gitattributes
 - Modify: `jlama-native/pom.xml` (execuções `compile-jdk20/21/22`)
 - Delete: `jlama-native/src/main/java20/`, `jlama-native/src/main/java21/`
 - Rename: `jlama-native/src/main/java22/` para `jlama-native/src/main/java25/`
-- Modify: `run-cli.sh`, `run-cli.bat` (verificação de versão do JDK)
+- Modify: `run-cli.sh`, `run-cli.bat` (o `.bat` não tem verificação de versão; só o `.sh` é alterado)
 - Create (local, não versionado): `~/.m2/toolchains.xml`
 
 **Interfaces:**
@@ -147,6 +147,10 @@ por:
 </jdkToolchain>
 ```
 
+- [ ] **Step 4b: Manter o bytecode em 21 (desvio registrado)**
+
+Com `source`/`target` 25 o `jlama-net` falha em runtime: o Spring Boot 3.3.x (ASM) não lê classes versão 69 (`Unsupported class file major version 69`, em `ChatApiTest`). Por isso, no `maven-compiler-plugin` do `pom.xml`, use `<source>21</source>` e `<target>21</target>` (não 25) com um comentário no XML explicando o motivo. O JDK 25 continua sendo o único JDK de build, teste e execução (toolchain, `java25/` do nativo, `run-cli`). Subir o alvo para 25 junto com o upgrade do Spring (sub-projeto 2).
+
 - [ ] **Step 5: Surefire só no JDK 25**
 
 Em `pom.xml`, deixe uma única `<execution>`, a `default-test`, com `<jdkToolchain><version>25</version></jdkToolchain>`; apague as execuções `jdk21-test` e `jdk22-test`. Mantenha o mesmo `argLine` (inclui `--enable-preview`).
@@ -174,8 +178,8 @@ Expected: `BUILD SUCCESS`. Se o `jlama-native` falhar ao compilar o `java25/`, l
 
 - [ ] **Step 8: Rodar os testes**
 
-Run: `JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B test 2>&1 | grep -E "Tests run:|BUILD" | tail -15`
-Expected: `BUILD SUCCESS`. Testes dependentes de modelos em `../models/` são pulados por `Assume` (não contam como falha).
+Run: `JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B clean package 2>&1 | grep -E "Tests run:|BUILD" | tail -15`
+Expected: `BUILD SUCCESS`. Use `package`, e não `test`: o `jlama-tests` precisa do JAR multi-release do `jlama-native` (com `META-INF/versions/25`); com `test` ele vê só `target/classes`, onde o Java não aplica multi-release, e os testes nativos falham com `UnsupportedOperationException: Not implemented for this JDK version`. Use `clean` ao mudar `source`/`target`, senão o Maven não recompila e as classes antigas ficam. Testes dependentes de modelos em `../models/` são pulados por `Assume` (não contam como falha). Alguns testes do `jlama-net` e do `TestSample` baixam modelos do Hugging Face (dezenas de minutos na primeira vez); uma falha `Failed to download file` / `Connection reset` é de rede: rode de novo, pois o modelo fica em cache.
 
 - [ ] **Step 9: Commit**
 
