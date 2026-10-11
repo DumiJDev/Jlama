@@ -222,7 +222,7 @@ import static org.junit.Assert.assertTrue;
 import com.github.tjake.jlama.model.functions.Generator;
 import com.github.tjake.jlama.safetensors.DType;
 import com.github.tjake.jlama.safetensors.prompt.PromptContext;
-import com.github.tjake.jlama.util.Downloader;
+import com.github.tjake.jlama.safetensors.SafeTensorSupport;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -240,14 +240,14 @@ public class SmokeTest {
     public void generatesSameTokensAsReference() throws Exception {
         Assume.assumeTrue("SMOKE_MODEL=1 required", "1".equals(System.getenv("SMOKE_MODEL")));
 
-        File dir = new Downloader("./models", "tjake/Qwen2.5-0.5B-Instruct-JQ4").huggingFaceModel();
+        File dir = SafeTensorSupport.maybeDownloadModel("./models", "tjake/Qwen2.5-0.5B-Instruct-JQ4");
         AbstractModel m = ModelSupport.loadModel(dir, DType.F32, DType.I8);
 
         PromptContext ctx = m.promptSupport().get().builder()
             .addUserMessage("What is the capital of France?")
             .build();
 
-        Generator.Response r = m.generate(UUID.randomUUID(), ctx, 0.0f, 16, (s, f) -> {});
+        Generator.Response r = m.generate(UUID.randomUUID(), ctx, 0.0f, 96, (s, f) -> {});
         assertFalse("no tokens generated", r.responseText.isBlank());
 
         if ("1".equals(System.getenv("SMOKE_RELAXED"))) {
@@ -265,7 +265,7 @@ public class SmokeTest {
 }
 ```
 
-Ajuste os imports de `Downloader` se o pacote real diferir (veja o `import` em `TestSample.java`).
+O quarto argumento de `generate` é o limite **total** de tokens (prompt incluído); 16 falha com `Prompt exceeds max tokens`. A API de download é `SafeTensorSupport.maybeDownloadModel` (o README, que cita `Downloader`, está desatualizado). Se o download pelo Java cair com `Connection reset`, baixe o `model.safetensors` com `curl -L -C -` para `jlama-tests/models/tjake_Qwen2.5-0.5B-Instruct-JQ4/`: o downloader pula arquivos com o tamanho esperado.
 
 - [ ] **Step 3: Gravar as referências (antes de qualquer rename)**
 
@@ -313,7 +313,7 @@ package com.github.tjake.jlama.model;
 import com.github.tjake.jlama.model.functions.Generator;
 import com.github.tjake.jlama.safetensors.DType;
 import com.github.tjake.jlama.safetensors.prompt.PromptContext;
-import com.github.tjake.jlama.util.Downloader;
+import com.github.tjake.jlama.safetensors.SafeTensorSupport;
 import java.io.File;
 import java.util.UUID;
 import org.junit.Assume;
@@ -323,13 +323,13 @@ public class PerfBaselineTest {
 
     private static final int WARMUP_RUNS = 2;
     private static final int MEASURED_RUNS = 5;
-    private static final int MAX_TOKENS = 64;
+    private static final int MAX_TOKENS = 256; // limite total de tokens (prompt incluido), como em TestSample
 
     @Test
     public void measureTokensPerSecond() throws Exception {
         Assume.assumeTrue("PERF_BASELINE=1 required", "1".equals(System.getenv("PERF_BASELINE")));
 
-        File dir = new Downloader("./models", "tjake/Qwen2.5-0.5B-Instruct-JQ4").huggingFaceModel();
+        File dir = SafeTensorSupport.maybeDownloadModel("./models", "tjake/Qwen2.5-0.5B-Instruct-JQ4");
 
         long t0 = System.nanoTime();
         AbstractModel m = ModelSupport.loadModel(dir, DType.F32, DType.I8);
