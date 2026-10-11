@@ -57,7 +57,7 @@ Estado atual verificado: branch `main`, `origin` em `DumiJDev/Jlama`. O `git sta
 ### 3.2 Critério de pronto
 
 - `./mvnw verify` verde na CI nos dois JDKs.
-- `grep -ri tjake` fora de `NOTICE`, README e cabeçalhos de atribuição não retorna nada.
+- `grep -ri tjake` fora de `NOTICE`, README e cabeçalhos de atribuição não retorna nada, exceto ids de modelo do Hugging Face (`tjake/...`) e o clone `tjake/sdkman-for-toolchains` no Dockerfile, que são nomes externos.
 - Artefato resolvível no Maven Central (ou dry-run aprovado).
 - Teste de fumaça: carrega um modelo pequeno e gera tokens, rodando na CI.
 
