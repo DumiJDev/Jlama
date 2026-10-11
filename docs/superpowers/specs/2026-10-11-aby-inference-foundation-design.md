@@ -51,14 +51,15 @@ Estado atual verificado: branch `main`, `origin` em `DumiJDev/Jlama`. O `git sta
    - `<revision>` reinicia em `0.1.0-SNAPSHOT`.
 4. **Atribuição (Apache 2.0).** `NOTICE` ("Este produto inclui software derivado do Jlama, © Tim Jake e colaboradores"), seção "Origem" no README, cabeçalhos de copyright originais preservados, arquivos modificados marcados, `conf/license-header` atualizado. Não usar o nome ou a marca do autor original para sugerir endosso.
 5. **Build e CI.** Matriz JDK 21 e 25; revisar os perfis do `pom.xml` (20/21/22); workflow de release para o Maven Central.
-6. **Publicação de teste.** Verificar o namespace `ao.bitubi` no Sonatype (exige controlar o domínio `bitubi.ao`; fallback `io.github.bitubi-solutions`) e publicar `0.1.0` ou fazer dry-run.
+6. **Publicação.** Por decisão do autor, começa no GitHub Packages (`maven.pkg.github.com/bitubi-solutions/aby-inference`); o Maven Central fica para depois (exige verificar o domínio `bitubi.ao`, ou usar `io.github.bitubi-solutions`).
 7. **Governança mínima.** `CONTRIBUTING`, DCO ou CLA (necessário antes de aceitar PR externo, para preservar a opção comercial), templates de issue.
 
 ### 3.2 Critério de pronto
 
 - `./mvnw verify` verde na CI nos dois JDKs.
 - `grep -ri tjake` fora de `NOTICE`, README e cabeçalhos de atribuição não retorna nada, exceto ids de modelo do Hugging Face (`tjake/...`) e o clone `tjake/sdkman-for-toolchains` no Dockerfile, que são nomes externos.
-- Artefato resolvível no Maven Central (ou dry-run aprovado).
+- Artefato publicado no GitHub Packages.
+- Texto gerado idêntico ao de referência gravada antes do rename (temperatura 0, por JDK), e tokens/s dentro da faixa de variação do baseline (`docs/benchmarks/`).
 - Teste de fumaça: carrega um modelo pequeno e gera tokens, rodando na CI.
 
 ### 3.3 Riscos

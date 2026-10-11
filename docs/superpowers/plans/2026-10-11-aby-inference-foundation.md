@@ -6,7 +6,7 @@
 
 **Architecture:** Mudanças mecânicas em commits pequenos e revisáveis. Primeiro limpar o ruído de fim de linha, depois fazer o build funcionar em JDK 21/25 (baseline), só então renomear, para que uma quebra de rename seja distinguível de uma quebra de build. Um teste de fumaça com modelo real prova que o motor e o código nativo continuam funcionando.
 
-**Tech Stack:** Java 21/25, Maven (wrapper), JUnit 4, GitHub Actions, Sonatype Central Portal.
+**Tech Stack:** Java 21/25, Maven (wrapper), JUnit 4, GitHub Actions, GitHub Packages.
 
 **Spec:** `docs/superpowers/specs/2026-10-11-aby-inference-foundation-design.md`
 
@@ -202,14 +202,16 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: `Downloader(String workingDirectory, String model).huggingFaceModel()`, `ModelSupport.loadModel(File, DType, DType)`, `AbstractModel.generate(UUID, PromptContext, float, int, BiConsumer)` (como em `TestSample.java`).
-- Produces: `SmokeTest.generatesTokensWithSmallModel`, o teste que prova que o motor e o nativo funcionam após o rename.
+- Produces: `SmokeTest.generatesSameTokensAsReference` e as referências `smoke-golden-21.txt` e `smoke-golden-25.txt` em `jlama-tests/src/test/resources/`; o teste prova que o motor e o nativo produzem a mesma saída após o rename.
 
 - [ ] **Step 1: Ver como `TestSample.java` baixa e carrega o modelo**
 
 Run: `sed -n 30,75p jlama-tests/src/test/java/com/github/tjake/jlama/model/TestSample.java`
 Expected: usa `Downloader` e `ModelSupport.loadModel` com `tjake/Qwen2.5-0.5B-Instruct-JQ4`. Copie os imports exatos de lá.
 
-- [ ] **Step 2: Escrever o teste**
+- [ ] **Step 2: Escrever o teste (com comparação contra uma saída de referência)**
+
+Com temperatura 0 a geração é determinística na mesma máquina. O teste compara o texto gerado com um arquivo de referência por versão do JDK (`smoke-golden-21.txt`, `smoke-golden-25.txt`), porque os resultados de ponto flutuante podem diferir entre JDKs. Com `SMOKE_RECORD=1` ele grava a referência em vez de comparar.
 
 ```java
 /*
@@ -218,21 +220,29 @@ Expected: usa `Downloader` e `ModelSupport.loadModel` com `tjake/Qwen2.5-0.5B-In
  */
 package com.github.tjake.jlama.model;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.github.tjake.jlama.model.functions.Generator;
 import com.github.tjake.jlama.safetensors.DType;
 import com.github.tjake.jlama.safetensors.prompt.PromptContext;
 import com.github.tjake.jlama.util.Downloader;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 import org.junit.Assume;
 import org.junit.Test;
 
 public class SmokeTest {
 
+    private static final Path GOLDEN_DIR = Paths.get("src/test/resources");
+
     @Test
-    public void generatesTokensWithSmallModel() throws Exception {
+    public void generatesSameTokensAsReference() throws Exception {
         Assume.assumeTrue("SMOKE_MODEL=1 required", "1".equals(System.getenv("SMOKE_MODEL")));
 
         File dir = new Downloader("./models", "tjake/Qwen2.5-0.5B-Instruct-JQ4").huggingFaceModel();
@@ -244,26 +254,148 @@ public class SmokeTest {
 
         Generator.Response r = m.generate(UUID.randomUUID(), ctx, 0.0f, 16, (s, f) -> {});
         assertFalse("no tokens generated", r.responseText.isBlank());
+
+        if ("1".equals(System.getenv("SMOKE_RELAXED"))) {
+            return; // CI: hardware diferente do de referência; só exige texto não vazio
+        }
+
+        Path golden = GOLDEN_DIR.resolve("smoke-golden-" + Runtime.version().feature() + ".txt");
+        if ("1".equals(System.getenv("SMOKE_RECORD"))) {
+            Files.writeString(golden, r.responseText, StandardCharsets.UTF_8);
+            return;
+        }
+        assertTrue("missing reference " + golden + " (run once with SMOKE_RECORD=1)", Files.exists(golden));
+        assertEquals(Files.readString(golden, StandardCharsets.UTF_8), r.responseText);
     }
 }
 ```
 
 Ajuste os imports de `Downloader` se o pacote real diferir (veja o `import` em `TestSample.java`).
 
-- [ ] **Step 3: Rodar e ver passar (baseline pré-rename)**
+- [ ] **Step 3: Gravar as referências (antes de qualquer rename)**
+
+Execute uma vez por JDK. O Surefire roda as execuções 21 e 25 na mesma chamada, e cada uma grava o seu arquivo:
+
+Run: `SMOKE_MODEL=1 SMOKE_RECORD=1 JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B -pl jlama-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -E "Tests run|BUILD"; ls jlama-tests/src/test/resources/smoke-golden-*`
+Expected: `BUILD SUCCESS` e os dois arquivos `smoke-golden-21.txt` e `smoke-golden-25.txt`, ambos não vazios. (Baixa ~500 MB na primeira vez.) Se o download falhar (modelo removido do Hugging Face), troque o id por outro modelo pequeno que exista e anote no commit. Leia os dois arquivos: se o texto do 21 e do 25 diferir, isso é esperado e fica registrado; se estiver sem sentido (lixo), pare e investigue antes de seguir.
+
+- [ ] **Step 4: Rodar em modo de comparação**
 
 Run: `SMOKE_MODEL=1 JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B -pl jlama-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -E "Tests run|BUILD"`
-Expected: `Tests run: 1, Failures: 0` nas duas execuções (21 e 25) e `BUILD SUCCESS`. (Baixa ~500 MB na primeira vez.) Se o download falhar (modelo removido do Hugging Face), troque o id por outro modelo pequeno que exista e anote no commit.
-
-- [ ] **Step 4: Adicionar `SmokeTest` à CI**
-
-(Feito na Task 8, no workflow.)
+Expected: `Tests run: 1, Failures: 0` nas duas execuções e `BUILD SUCCESS`. Rodar duas vezes seguidas deve passar nas duas (confirma o determinismo).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add jlama-tests/src/test/java/com/github/tjake/jlama/model/SmokeTest.java
-git commit -m "test: adiciona teste de fumaça com modelo pequeno
+git add jlama-tests/src/test/java/com/github/tjake/jlama/model/SmokeTest.java jlama-tests/src/test/resources/smoke-golden-21.txt jlama-tests/src/test/resources/smoke-golden-25.txt
+git commit -m "test: teste de fumaça com saída de referência
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+```
+
+---
+
+### Task 3b: Baseline de desempenho (antes do rename)
+
+**Files:**
+- Create: `jlama-tests/src/test/java/com/github/tjake/jlama/model/PerfBaselineTest.java` (o caminho muda no rename, Task 4)
+- Create: `docs/benchmarks/baseline-<hardware>.md` (o nome é escolhido no Step 3)
+- Create: `docs/benchmarks/run-perf.sh`
+
+**Interfaces:**
+- Consumes: `Generator.Response` com os campos públicos `promptTokens`, `generatedTokens`, `promptTimeMs`, `generateTimeMs`.
+- Produces: números de referência (tokens/s) por hardware, usados na Task 4 e nos sub-projetos 1, 1b e 2.
+
+Métricas deste baseline (as de qualidade e as de GPU entram nos specs dos sub-projetos 1 e 1b): tokens/s do prompt (prefill), tokens/s da geração (decode), tempo de carga do modelo e memória de pico. Os números vêm do próprio `Generator.Response`, sem depender de JMH.
+
+- [ ] **Step 1: Escrever o teste de medição**
+
+```java
+/*
+ * Copyright 2024 T Jake Luciani
+ * (cabeçalho Apache 2.0 idêntico ao de conf/license-header)
+ */
+package com.github.tjake.jlama.model;
+
+import com.github.tjake.jlama.model.functions.Generator;
+import com.github.tjake.jlama.safetensors.DType;
+import com.github.tjake.jlama.safetensors.prompt.PromptContext;
+import com.github.tjake.jlama.util.Downloader;
+import java.io.File;
+import java.util.UUID;
+import org.junit.Assume;
+import org.junit.Test;
+
+public class PerfBaselineTest {
+
+    private static final int WARMUP_RUNS = 2;
+    private static final int MEASURED_RUNS = 5;
+    private static final int MAX_TOKENS = 64;
+
+    @Test
+    public void measureTokensPerSecond() throws Exception {
+        Assume.assumeTrue("PERF_BASELINE=1 required", "1".equals(System.getenv("PERF_BASELINE")));
+
+        File dir = new Downloader("./models", "tjake/Qwen2.5-0.5B-Instruct-JQ4").huggingFaceModel();
+
+        long t0 = System.nanoTime();
+        AbstractModel m = ModelSupport.loadModel(dir, DType.F32, DType.I8);
+        long loadMs = (System.nanoTime() - t0) / 1_000_000;
+
+        PromptContext ctx = m.promptSupport().get().builder()
+            .addUserMessage("Write a short paragraph about the history of the Java programming language.")
+            .build();
+
+        for (int i = 0; i < WARMUP_RUNS; i++) {
+            m.generate(UUID.randomUUID(), ctx, 0.0f, MAX_TOKENS, (s, f) -> {});
+        }
+
+        double prefillSum = 0;
+        double decodeSum = 0;
+        for (int i = 0; i < MEASURED_RUNS; i++) {
+            Generator.Response r = m.generate(UUID.randomUUID(), ctx, 0.0f, MAX_TOKENS, (s, f) -> {});
+            prefillSum += r.promptTokens / (double) Math.max(1, r.promptTimeMs) * 1000.0;
+            decodeSum += r.generatedTokens / (double) Math.max(1, r.generateTimeMs) * 1000.0;
+        }
+
+        Runtime rt = Runtime.getRuntime();
+        long usedMb = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
+        System.out.printf(
+            "PERF jdk=%d load_ms=%d prefill_tok_s=%.2f decode_tok_s=%.2f heap_used_mb=%d%n",
+            Runtime.version().feature(), loadMs, prefillSum / MEASURED_RUNS, decodeSum / MEASURED_RUNS, usedMb);
+    }
+}
+```
+
+- [ ] **Step 2: Script de execução**
+
+Crie `docs/benchmarks/run-perf.sh`:
+
+```bash
+#!/bin/bash
+# Uso: docs/benchmarks/run-perf.sh <jdk-home>
+set -e
+JDK_HOME="${1:?uso: run-perf.sh <jdk-home>}"
+echo "== hardware =="
+lscpu | grep -E "Model name|^CPU\(s\)|Flags" | sed -E 's/(Flags:).*/\1 (ver avx abaixo)/'
+grep -o -w -E "avx512[a-z_]*|avx2|avx|fma|neon" /proc/cpuinfo | sort -u | tr '\n' ' '; echo
+echo "== medição =="
+PERF_BASELINE=1 JAVA_HOME="$JDK_HOME" ./mvnw -B -pl jlama-tests -am test \
+  -Dtest=PerfBaselineTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -E "^PERF |BUILD"
+```
+
+Run: `chmod +x docs/benchmarks/run-perf.sh`
+
+- [ ] **Step 3: Medir e registrar**
+
+Run: `docs/benchmarks/run-perf.sh /home/dumi/.sdkman/candidates/java/25.0.3-amzn | tee /tmp/perf-before.txt`
+Expected: duas linhas `PERF jdk=21 ...` e `PERF jdk=25 ...` e `BUILD SUCCESS`. Rode três vezes e anote a variação. Crie `docs/benchmarks/baseline-<hardware>.md` (escolha `<hardware>` pelo modelo da CPU, em minúsculas e com hifens) com: o bloco de hardware impresso pelo script, o commit (`git rev-parse --short HEAD`), o JDK, as três execuções e a faixa de variação observada (mín.-máx.). Esta variação define a tolerância usada na Task 4.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add jlama-tests/src/test/java/com/github/tjake/jlama/model/PerfBaselineTest.java docs/benchmarks
+git commit -m "test: baseline de desempenho (tokens/s) antes do rename
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
@@ -352,12 +484,21 @@ Expected: sem saída.
 Run: `JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B clean verify 2>&1 | grep -E "Tests run:|BUILD|ERROR" | tail -15`
 Expected: `BUILD SUCCESS`. Se o `jlama-core` falhar por `module-info`/recurso com o nome antigo, rode `grep -rn "jlama" --include=*.json --include=*.properties --include=*.xml --exclude-dir=target .` e corrija o nome do pacote.
 
-- [ ] **Step 8: Teste de fumaça (prova que o nativo e o motor sobreviveram)**
+- [ ] **Step 8: Comparação de saída (prova que o nativo e o motor sobreviveram)**
+
+Não grave novas referências: o teste compara com as gravadas antes do rename (Task 3).
 
 Run: `SMOKE_MODEL=1 JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B -pl aby-inference-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -E "Tests run|BUILD"`
-Expected: `Tests run: 1, Failures: 0` nas execuções 21 e 25. Em seguida confirme que o caminho nativo carrega: `unzip -l aby-inference-native/target/aby-inference-native-*-linux-x86_64.jar | grep -E "META-INF/versions/(21|22)/ao/bitubi"` deve listar classes `cnative` (Review Focus 3).
+Expected: `Tests run: 1, Failures: 0` nas execuções 21 e 25, ou seja, o texto gerado é idêntico ao de antes do rename. Se falhar com diferença de texto, o rename quebrou algo (provavelmente o caminho nativo); não regrave a referência.
 
-- [ ] **Step 9: Commit**
+Em seguida confirme que o caminho nativo carrega: `unzip -l aby-inference-native/target/aby-inference-native-*-linux-x86_64.jar | grep -E "META-INF/versions/(21|22)/ao/bitubi"` deve listar classes `cnative` (Review Focus 3).
+
+- [ ] **Step 9: Comparação de desempenho**
+
+Run: `docs/benchmarks/run-perf.sh /home/dumi/.sdkman/candidates/java/25.0.3-amzn | tee /tmp/perf-after.txt`
+Expected: `prefill_tok_s` e `decode_tok_s` dentro da faixa mín.-máx. registrada em `docs/benchmarks/baseline-<hardware>.md` (Task 3b). Se ficar abaixo da faixa, rode mais duas vezes para descartar ruído; se persistir, o rename mudou o caminho de execução (por exemplo o nativo deixou de ser usado) e deve ser investigado antes do commit. Acrescente os números "depois" ao mesmo arquivo de baseline.
+
+- [ ] **Step 10: Commit**
 
 ```bash
 git add -A
@@ -490,8 +631,11 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         env:
           SMOKE_MODEL: "1"
+          SMOKE_RELAXED: "1"
         run: ./mvnw -B -pl aby-inference-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false
 ```
+
+(A CI usa `SMOKE_RELAXED=1`: as referências de texto foram gravadas num hardware específico e o ponto flutuante pode diferir em outra CPU, então na CI o teste só exige texto não vazio. A comparação estrita roda localmente nas Tasks 3 e 4.)
 
 (Em `macos-latest` o runner é ARM; `macos-13`, x86, foi removido. Se o `aby-inference-native` não compilar em ARM, registre e ajuste o `Makefile` em uma task própria; não esconda a falha.)
 
@@ -511,44 +655,33 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 7: Release para o Maven Central (Central Portal)
+### Task 7: Publicação no GitHub Packages
 
 **Files:**
-- Modify: `pom.xml` (perfil `release`, linhas ~320-420)
+- Modify: `pom.xml` (perfil `release`: `distributionManagement`, plugins de publicação)
 - Modify: `.github/workflows/release.yaml`
 
 **Interfaces:**
-- Consumes: groupId `ao.bitubi.aby-inference`.
-- Produces: perfil `release` que publica via Central Portal; workflow `Release` manual.
+- Consumes: groupId `ao.bitubi.aby-inference` e as URLs `scm` da Task 5.
+- Produces: perfil `release` que publica em `https://maven.pkg.github.com/bitubi-solutions/aby-inference`; workflow `Release` manual.
 
-Contexto: o perfil atual usa OSSRH (`oss.sonatype.org`) e o `nexus-staging-maven-plugin`; o workflow filtra o staging por `grep "comgithubtjake"`. O OSSRH foi desligado em 2025 e substituído pelo Central Portal. **Confirme isto na documentação do Sonatype antes de começar** (https://central.sonatype.org/publish/publish-portal-maven/).
+Decisão do autor: o release no Maven Central fica para depois (exige verificar o domínio `bitubi.ao`, chave GPG e o Central Portal). Por enquanto publica-se no GitHub Packages, que não exige verificação de domínio nem GPG. Limitação a registrar no README: o GitHub Packages exige autenticação (token com `read:packages`) até para ler pacotes públicos, então não serve como distribuição aberta ao público.
 
-- [ ] **Step 1: Ação humana (bloqueante), no Central Portal**
+- [ ] **Step 1: Trocar o destino de publicação**
 
-1. Crie conta em https://central.sonatype.com e registre o namespace `ao.bitubi.aby-inference` (ou o namespace pai `ao.bitubi`). Verifique-o provando o domínio `bitubi.ao` (registro TXT no DNS).
-2. Gere um *user token* e guarde como secrets do repositório: `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`, `GPG_PRIVATE_KEY`, `GPG_KEY_PASSWORD`.
-3. Sem controle do domínio `bitubi.ao`: o fallback é registrar `io.github.bitubi-solutions` e mudar o `groupId` (volte à Task 4, Step 4).
-
-- [ ] **Step 2: Trocar o plugin de publicação**
-
-No perfil `release` do `pom.xml`: remova `<distributionManagement>` e o `nexus-staging-maven-plugin`; adicione:
+No perfil `release` do `pom.xml`: remova `<distributionManagement>` do OSSRH, o `nexus-staging-maven-plugin` e o plugin `maven-gpg-plugin` (mantenha `maven-source-plugin` e `maven-javadoc-plugin`). Adicione:
 
 ```xml
-<plugin>
-  <groupId>org.sonatype.central</groupId>
-  <artifactId>central-publishing-maven-plugin</artifactId>
-  <version>0.8.0</version>
-  <extensions>true</extensions>
-  <configuration>
-    <publishingServerId>central</publishingServerId>
-    <autoPublish>false</autoPublish>
-  </configuration>
-</plugin>
+<distributionManagement>
+  <repository>
+    <id>github</id>
+    <name>GitHub Packages</name>
+    <url>https://maven.pkg.github.com/bitubi-solutions/aby-inference</url>
+  </repository>
+</distributionManagement>
 ```
 
-Verifique a última versão estável do plugin em https://central.sonatype.com/artifact/org.sonatype.central/central-publishing-maven-plugin antes de fixar. Mantenha os plugins de sources, javadoc e GPG.
-
-- [ ] **Step 3: Reescrever `release.yaml`**
+- [ ] **Step 2: Reescrever `release.yaml`**
 
 ```yaml
 name: Release
@@ -557,6 +690,9 @@ on: workflow_dispatch
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -567,31 +703,27 @@ jobs:
           distribution: temurin
           mvn-toolchain-vendor: Eclipse Adoptium
           cache: maven
-          server-id: central
-          server-username: CENTRAL_USERNAME
-          server-password: CENTRAL_PASSWORD
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg-passphrase: GPG_KEY_PASSWORD
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
       - name: Publish
         env:
-          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
-          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
-          GPG_KEY_PASSWORD: ${{ secrets.GPG_KEY_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./mvnw -B -DskipTests -Prelease deploy
 ```
 
-Nota: o antigo job publicava as bibliotecas nativas de cada SO (`-pl jlama-native deploy`) em um repositório de staging compartilhado. O Central Portal não tem `rc-list`; antes de fechar esta task decida como publicar o classificador de macOS/Windows (matriz com bundle único, ou um job por SO que faz upload ao mesmo *deployment*). Se não houver tempo, publique só o classificador `linux-x86_64` no `0.1.0` e registre a limitação no README.
+Nota sobre as bibliotecas nativas: o job antigo publicava o classificador de cada SO (macOS, Windows) no mesmo repositório de staging. Aqui não há staging: o job acima publica só o classificador do Linux (`linux-x86_64`). Para os demais SOs, adicione depois jobs por SO que rodam `./mvnw -B -Prelease -am -pl aby-inference-native deploy`; antes de fazê-lo, verifique se o GitHub Packages aceita republicar o mesmo POM e JAR principal por outro job (pode responder 409). Registre no README que, no `0.1.0`, só o Linux x86_64 é publicado.
 
-- [ ] **Step 4: Dry-run local**
+- [ ] **Step 3: Dry-run local (sem enviar nada)**
 
-Run: `JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B -DskipTests -Prelease -Dgpg.skip=true package 2>&1 | grep -E "BUILD|ERROR" | tail -5`
-Expected: `BUILD SUCCESS` (gera sources e javadoc). Não rode `deploy` sem a Step 1 concluída.
+Run: `JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B -DskipTests -Prelease package 2>&1 | grep -E "BUILD|ERROR" | tail -5`
+Expected: `BUILD SUCCESS` (gera sources e javadoc). Não rode `deploy` localmente.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add pom.xml .github/workflows/release.yaml
-git commit -m "build: publica via Central Portal
+git commit -m "build: publica no GitHub Packages
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 ```
@@ -656,14 +788,14 @@ git push -u origin foundation/aby-rename
 
 Depois abra o PR para `main` na organização e verifique que a CI fica verde nos três SOs.
 
-- [ ] **Step 6: Release `0.1.0` (após a Task 7, Step 1)**
+- [ ] **Step 6: Primeira publicação no GitHub Packages (após o Step 5; confirme com o autor)**
 
-Troque `<revision>` para `0.1.0`, crie a tag `v0.1.0`, execute o workflow `Release` e confira em https://central.sonatype.com que o *deployment* está validado. Só então publique (`autoPublish` está `false` de propósito). Volte `<revision>` para `0.1.1-SNAPSHOT`.
+Troque `<revision>` para `0.1.0`, faça commit, crie a tag `v0.1.0` e execute o workflow `Release`. Confira em `https://github.com/orgs/bitubi-solutions/packages` que os artefatos `aby-inference-*` aparecem. Volte `<revision>` para `0.1.1-SNAPSHOT`. O release no Maven Central fica fora deste plano.
 
 ---
 
 ## Self-Review
 
-- **Spec coverage:** passo 1 do spec (fim de linha) = Task 1; passo 2 (migrar) = Task 8 Step 5; passo 3 (rename) = Task 4; passo 4 (atribuição) = Task 5; passo 5 (build e CI) = Tasks 2 e 6; passo 6 (publicação) = Tasks 7 e 8 Step 6; passo 7 (governança) = Task 8. Critério de pronto: `verify` verde (Tasks 2, 4, 8), `grep tjake` (Task 5 Step 6), artefato no Central (Task 8 Step 6), teste de fumaça (Tasks 3, 4, 6).
+- **Spec coverage:** passo 1 do spec (fim de linha) = Task 1; passo 2 (migrar) = Task 8 Step 5; passo 3 (rename) = Task 4; passo 4 (atribuição) = Task 5; passo 5 (build e CI) = Tasks 2 e 6; passo 6 (publicação) = Tasks 7 e 8 Step 6; passo 7 (governança) = Task 8. Critério de pronto: `verify` verde (Tasks 2, 4, 8), `grep tjake` (Task 5 Step 6), artefato no GitHub Packages (Task 8 Step 6), comparação de saída (Tasks 3 e 4), comparação de desempenho com o baseline (Tasks 3b e 4), teste de fumaça na CI (Task 6).
 - **Divergência do spec:** o critério "`grep -ri tjake` não retorna nada" foi relaxado para permitir ids de modelo do Hugging Face e o clone `sdkman-for-toolchains` (nomes externos). O spec deve ser atualizado com esta ressalva.
 - **Pontos que não pude verificar sem executar:** se o código `java21/` (FFM preview) compila e roda num build com JDK 25; se `macos-latest` (ARM) compila o `jlama-native`; a versão atual do `central-publishing-maven-plugin`; a existência do modelo do teste de fumaça no Hugging Face. Cada um tem um passo de verificação e fallback nas tasks acima.
