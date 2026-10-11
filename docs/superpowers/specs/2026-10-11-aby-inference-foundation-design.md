@@ -30,6 +30,7 @@ Este spec detalha só o sub-projeto 0. Os demais têm intenção e restrições 
 ### 2.1 Restrições já decididas para os próximos sub-projetos
 
 - **Sub-projeto 1.** Alvo: JDK 25 LTS, mantendo compatibilidade com 21. A pesquisa (2026-10) não achou ganho de desempenho novo e comprovado entre JDK 21 e 26: a Vector API segue em incubação (JEP 529, JDK 26, sem mudanças substanciais desde o 25), e Valhalla (JEP 401) está previsto só como preview em JDK 28/29. Os ganhos para hardware antigo virão do motor: kernels de GEMM com fallback para CPUs sem AVX-512/AVX2, quantização agressiva, tiling para cache e threads, e modelos pequenos e eficientes (Phi, Gemma 3, Qwen3, Llama 3.2). Critério de pronto: benchmarks em CPU sem AVX-512.
+  - **Suporte a GGUF (requisito do autor).** O motor hoje lê apenas SafeTensors; GGUF é o formato mais usado para modelos quantizados e dá acesso direto ao ecossistema existente (Hugging Face, llama.cpp). Escopo: leitor de GGUF (metadados, tokenizer embutido, tensores), os tipos de quantização mais comuns (Q4_0, Q8_0 e as K-quants como Q4_K_M, Q5_K_M, Q6_K), com kernels de dequantização/GEMM para eles, e carregamento direto sem converter. Precisa de uma camada de abstração de formato de modelo (SafeTensors e GGUF atrás da mesma interface). Decisão em aberto para o spec do sub-projeto 1: quais arquiteturas ligar primeiro (Llama, Qwen, Gemma, Phi) e se o formato JQ4 próprio continua sendo suportado.
 - **Sub-projeto 1b (WebGPU).** Não verificado que exista binding Java maduro para WebGPU. Hipótese a testar: ligar `wgpu-native` via FFM (API final desde Java 22), com kernels de matmul/atenção em WGSL. **Começa com um spike** (carregar um modelo pequeno e medir tokens/s contra o caminho de CPU, num hardware antigo real) antes de qualquer compromisso de escopo. O backend deve ser opcional e cair para CPU se não houver GPU.
 - **Sub-projeto 2.** UI com htmx + JTE sobre Spring Boot 4 (base Java 17). Existem starter JTE para Boot 4 e htmx-spring-boot 5.x declarando compatibilidade, mas não há anúncio oficial juntando os três: validar versões no Maven Central antes de fixar. APIs: OpenAI (streaming, tools, embeddings, `/v1/models`) e Anthropic (`/v1/messages`, streaming, tool use).
 - **Sub-projeto 3.** O coordinator/worker open source deve evoluir a ponto de o self-hosted já justificar migrar para cloud (HA, autoscaling, descoberta, filas). O operador gerenciado fica no lado pago.
@@ -65,7 +66,7 @@ Estado atual verificado: branch `main`, `origin` em `DumiJDev/Jlama`. O `git sta
 - **`jlama-native`:** nomes de classe ou símbolos JNI ligados ao pacote antigo podem quebrar no rename. O teste de fumaça com modelo real detecta.
 - **Namespace Maven:** sem controle de `bitubi.ao`, usar o fallback.
 - **Divergência do upstream:** após o rename, merges do upstream ficam trabalhosos. Aceito, dado o rebrand.
-- **Modelos pré-quantizados:** os de `hf.co/tjake` usam o formato JQ4. Manter leitura compatível e decidir depois onde hospedar os próprios.
+- **Modelos pré-quantizados:** os de `hf.co/tjake` usam o formato JQ4. Manter leitura compatível e decidir depois onde hospedar os próprios; com GGUF (sub-projeto 1) a dependência de modelos próprios diminui.
 
 ### 3.4 Testes
 
