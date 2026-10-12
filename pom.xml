@@ -4,25 +4,25 @@
   child.project.url.inherit.append.path="false">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.github.tjake</groupId>
-  <artifactId>jlama-parent</artifactId>
+  <groupId>ao.bitubi</groupId>
+  <artifactId>bitubi-inference-4j-parent</artifactId>
   <version>${revision}</version>
 
-  <name>Jlama Parent</name>
-  <url>https://github.com/tjake/jlama</url>
+  <name>bitubi-inference-4j Parent</name>
+  <url>https://github.com/bitubi-solutions/bitubi-inference-4j</url>
   <packaging>pom</packaging>
 
-  <description>Jlama: A modern LLM inference engine for Java</description>
+  <description>bitubi-inference-4j: motor de inferencia de LLMs em Java (derivado do Jlama)</description>
   <scm child.scm.connection.inherit.append.path="false"
       child.scm.developerConnection.inherit.append.path="false"
       child.scm.url.inherit.append.path="false">
-    <connection>scm:git:git://github.com/tjake/jlama.git</connection>
-    <developerConnection>scm:git:git@github.com:tjake/jlama.git</developerConnection>
-    <url>http://github.com/tjake/jlama/tree/main/</url>
+    <connection>scm:git:git://github.com/bitubi-solutions/bitubi-inference-4j.git</connection>
+    <developerConnection>scm:git:git@github.com:bitubi-solutions/bitubi-inference-4j.git</developerConnection>
+    <url>https://github.com/bitubi-solutions/bitubi-inference-4j/tree/main/</url>
   </scm>
   <issueManagement>
     <system>github</system>
-    <url>http://github.com/tjake/jlama/issues</url>
+    <url>https://github.com/bitubi-solutions/bitubi-inference-4j/issues</url>
   </issueManagement>
   <licenses>
     <license>
@@ -36,13 +36,18 @@
       <name>Jake Luciani</name>
       <email>jake@apache.org</email>
       <organization>Jlama</organization>
-      <organizationUrl>https://github.com/tjake/jlama</organizationUrl>
+      <organizationUrl>https://github.com/bitubi-solutions/bitubi-inference-4j</organizationUrl>
+    </developer>
+    <developer>
+      <name>Bitubi Solutions</name>
+      <organization>Bitubi Solutions</organization>
+      <organizationUrl>https://github.com/bitubi-solutions</organizationUrl>
     </developer>
   </developers>
   <!-- Build property abstractions: versions, etc -->
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <revision>0.8.4</revision>
+    <revision>0.1.0-SNAPSHOT</revision>
 
     <slf4j-api.version>2.0.7</slf4j-api.version>
     <logback.version>1.5.6</logback.version>
@@ -121,13 +126,14 @@
                 <!-- We compile with highest jdk to lowest supported target, this is the best compatibility -->
                 <configuration>
 
-                  <source>20</source>
-                  <target>20</target>
+                  <!-- bytecode 21: o Spring Boot 3.3.x (ASM) nao le classes 25; subir para 25 junto com o upgrade do Spring (sub-projeto 2). O JDK 25 segue como unico JDK de build, teste e execucao. -->
+                  <source>21</source>
+                  <target>21</target>
                   <compilerArgs>
                     <arg>--add-modules=jdk.incubator.vector</arg>
                   </compilerArgs>
                   <jdkToolchain>
-                    <version>22</version>
+                    <version>25</version>
                   </jdkToolchain>
                 </configuration>
 
@@ -147,7 +153,7 @@
               </goals>
               <configuration>
                 <jdkToolchain>
-                    <version>20</version>
+                    <version>25</version>
                 </jdkToolchain>
                 <forkCount>1</forkCount>
                 <argLine>
@@ -156,49 +162,7 @@
                 --enable-preview
                 --enable-native-access=ALL-UNNAMED
                 --add-exports java.base/jdk.internal.vm.vector=ALL-UNNAMED
-                -Djava.library.path=../jlama-native/target/native-lib-only
-                </argLine>
-              </configuration>
-            </execution>
-            <execution>
-              <id>jdk21-test</id>
-              <phase>test</phase>
-              <goals>
-                <goal>test</goal>
-              </goals>
-              <configuration>
-                <jdkToolchain>
-                  <version>21</version>
-                </jdkToolchain>
-                <forkCount>1</forkCount>
-                <argLine>
-                  --add-modules=jdk.incubator.vector
-                  --add-exports java.base/sun.nio.ch=ALL-UNNAMED
-                  --enable-preview
-                  --enable-native-access=ALL-UNNAMED
-                  --add-exports java.base/jdk.internal.vm.vector=ALL-UNNAMED
-                  -Djava.library.path=../jlama-native/target/native-lib-only
-                </argLine>
-              </configuration>
-            </execution>
-            <execution>
-              <id>jdk22-test</id>
-              <phase>test</phase>
-              <goals>
-                <goal>test</goal>
-              </goals>
-              <configuration>
-                <jdkToolchain>
-                  <version>22</version>
-                </jdkToolchain>
-                <forkCount>1</forkCount>
-                <argLine>
-                  --add-modules=jdk.incubator.vector
-                  --add-exports java.base/sun.nio.ch=ALL-UNNAMED
-                  --enable-preview
-                  --enable-native-access=ALL-UNNAMED
-                  --add-exports java.base/jdk.internal.vm.vector=ALL-UNNAMED
-                  -Djava.library.path=../jlama-native/target/native-lib-only
+                -Djava.library.path=../bitubi-inference-4j-native/target/native-lib-only
                 </argLine>
               </configuration>
             </execution>
@@ -310,11 +274,11 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
-          <module>jlama-core</module>
-          <module>jlama-native</module>
-          <module>jlama-net</module>
-          <module>jlama-cli</module>
-          <module>jlama-tests</module>
+          <module>bitubi-inference-4j-core</module>
+          <module>bitubi-inference-4j-native</module>
+          <module>bitubi-inference-4j-net</module>
+          <module>bitubi-inference-4j-cli</module>
+          <module>bitubi-inference-4j-tests</module>
       </modules>
     </profile>
     <profile>
@@ -323,19 +287,16 @@
         <maven.install.skip>false</maven.install.skip>
       </properties>
       <modules>
-        <module>jlama-core</module>
-        <module>jlama-native</module>
-        <module>jlama-net</module>
-        <module>jlama-cli</module>
+        <module>bitubi-inference-4j-core</module>
+        <module>bitubi-inference-4j-native</module>
+        <module>bitubi-inference-4j-net</module>
+        <module>bitubi-inference-4j-cli</module>
       </modules>
       <distributionManagement>
-        <snapshotRepository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
         <repository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+          <id>github</id>
+          <name>GitHub Packages</name>
+          <url>https://maven.pkg.github.com/bitubi-solutions/bitubi-inference-4j</url>
         </repository>
       </distributionManagement>
       <build>
@@ -359,13 +320,12 @@
             <version>3.6.3</version>
             <configuration>
               <jdkToolchain>
-                <version>22</version>
+                <version>25</version>
               </jdkToolchain>
               <failOnError>false</failOnError>
               <additionalJOptions>
                 <additionalJOption>--add-modules=jdk.incubator.vector</additionalJOption>
               </additionalJOptions>
-              <release>22</release>
             </configuration>
             <executions>
               <execution>
@@ -375,38 +335,6 @@
                 </goals>
               </execution>
             </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-                <configuration>
-                  <gpgArguments>
-                    <arg>--pinentry-mode</arg>
-                    <arg>loopback</arg>
-                  </gpgArguments>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.13</version>
-            <extensions>true</extensions>
-            <configuration>
-              <serverId>ossrh</serverId>
-              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
-              <autoReleaseAfterClose>false</autoReleaseAfterClose>
-            </configuration>
           </plugin>
         </plugins>
       </build>

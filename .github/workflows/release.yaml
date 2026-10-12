@@ -1,48 +1,36 @@
-name: Release OSSRH
-on: workflow_dispatch
+name: Release
+
+# Release MANUAL: so roda quando alguem dispara o workflow na aba Actions e informa a versao.
+# Publica no GitHub Packages (https://maven.pkg.github.com/bitubi-solutions/bitubi-inference-4j).
+# Limitacao: o job publica o classificador do Linux (linux-x86_64) do bitubi-inference-4j-native.
+# Os classificadores de macOS e Windows ainda nao sao publicados (nao verificado se o GitHub Packages
+# aceita republicar o mesmo POM e JAR principal a partir de outro job).
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versao a publicar (ex.: 0.1.0)"
+        required: true
+        type: string
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest, macos-13 ]
-      fail-fast: true
-      max-parallel: 1
-    runs-on: ${{ matrix.os }}
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
-          java-version: |
-            20
-            21
-            22
-          distribution: adopt
+          java-version: 25
+          distribution: temurin
+          mvn-toolchain-vendor: Eclipse Adoptium
           cache: maven
-      - name: Install gpg secret key
-        shell: bash
-        run: |
-          # Install gpg secret key
-          cat <(echo -e "${{ secrets.GPG_PRIVATE_KEY }}") | gpg --batch --import
-          # Verify gpg secret key
-          gpg --list-secret-keys --keyid-format LONG
-      - name: Setup maven settings
-        shell: bash
-        run: |
-          # Setup maven settings
-          echo "<settings><servers><server><id>ossrh</id><username>${{ secrets.OSSRH_USER }}</username><password>${{ secrets.OSSRH_PASSWORD }}</password></server></servers><profiles><profile><id>ossrh</id><activation><activeByDefault>true</activeByDefault></activation><properties><gpg.executable>gpg</gpg.executable><gpg.passphrase>${{ secrets.GPG_KEY_PASSWORD }}</gpg.passphrase></properties></profile></profiles></settings>" > ~/.m2/settings.xml
-      - name: Release artifacts
-        if: startsWith(matrix.os,'ubuntu')
-        run: mvn -B -DskipTests -Prelease deploy
-      - name: native libraries
-        shell: bash
-        if: ${{ !startsWith(matrix.os,'ubuntu') }}
-        run: |
-          REPO_ID=`mvn -Prelease nexus-staging:rc-list | grep "comgithubtjake".*OPEN | cut -d' ' -f2 | tail -1`
-          if [ -z "$REPO_ID" ]; then
-            echo "No open staging repository found"
-            exit 1
-          fi
-          echo "Using staging repository $REPO_ID"
-          mvn -B -Prelease -am -pl jlama-native deploy -DstagingRepositoryId="$REPO_ID"
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+      - name: Publish to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./mvnw -B -DskipTests -Prelease -Drevision=${{ inputs.version }} deploy

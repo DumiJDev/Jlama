@@ -1,13 +1,13 @@
 version: '3'
 services:
-  jlama-coordinator:
-    image: jlama
+  bi4j-coordinator:
+    image: bi4j
     restart: always
-    container_name: jlama-coordinator
+    container_name: bi4j-coordinator
     ports:
       - "8080:8080"
     environment:
-      - JLAMA_JVM_ARGS_EXTRA=-Xmx1g -Djava.net.preferIPv4Stack=true
+      - BI4J_JVM_ARGS_EXTRA=-Xmx1g -Djava.net.preferIPv4Stack=true
     deploy:
       resources:
         limits:
@@ -23,14 +23,14 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/ui/index.html"]
       interval: 5s
-  jlama-worker:
-    image: jlama
+  bi4j-worker:
+    image: bi4j
     restart: always
     depends_on: 
-      jlama-coordinator:
+      bi4j-coordinator:
         condition: service_healthy
     environment:
-      - JLAMA_JVM_ARGS_EXTRA=-Xmx500M -Djava.net.preferIPv4Stack=true -Djlama.use_hostname_as_workerid=true
+      - BI4J_JVM_ARGS_EXTRA=-Xmx500M -Djava.net.preferIPv4Stack=true -Dbi4j.use_hostname_as_workerid=true
     deploy:
       mode: replicated
       replicas: 8
@@ -41,7 +41,7 @@ services:
     command:
       - cluster-worker
       - --threads=1
-      - --coordinator=jlama-coordinator
+      - --coordinator=bi4j-coordinator
       - tjake/Mistral-7B-Instruct-v0.3-jlama-Q4
     volumes:
       - "./models:/models"
