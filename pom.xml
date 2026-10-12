@@ -47,7 +47,7 @@
   <!-- Build property abstractions: versions, etc -->
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <revision>0.8.4</revision>
+    <revision>0.1.0-SNAPSHOT</revision>
 
     <slf4j-api.version>2.0.7</slf4j-api.version>
     <logback.version>1.5.6</logback.version>
@@ -293,13 +293,10 @@
         <module>bitubi-inference-4j-cli</module>
       </modules>
       <distributionManagement>
-        <snapshotRepository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
         <repository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+          <id>github</id>
+          <name>GitHub Packages</name>
+          <url>https://maven.pkg.github.com/bitubi-solutions/bitubi-inference-4j</url>
         </repository>
       </distributionManagement>
       <build>
@@ -323,13 +320,12 @@
             <version>3.6.3</version>
             <configuration>
               <jdkToolchain>
-                <version>22</version>
+                <version>25</version>
               </jdkToolchain>
               <failOnError>false</failOnError>
               <additionalJOptions>
                 <additionalJOption>--add-modules=jdk.incubator.vector</additionalJOption>
               </additionalJOptions>
-              <release>22</release>
             </configuration>
             <executions>
               <execution>
@@ -339,38 +335,6 @@
                 </goals>
               </execution>
             </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-                <configuration>
-                  <gpgArguments>
-                    <arg>--pinentry-mode</arg>
-                    <arg>loopback</arg>
-                  </gpgArguments>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.13</version>
-            <extensions>true</extensions>
-            <configuration>
-              <serverId>ossrh</serverId>
-              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
-              <autoReleaseAfterClose>false</autoReleaseAfterClose>
-            </configuration>
           </plugin>
         </plugins>
       </build>

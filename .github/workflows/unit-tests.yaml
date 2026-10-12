@@ -15,20 +15,37 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest, macos-13 ]
+        # macos-latest e ARM (arm64); macos-15-intel e x86_64. Confirme os rotulos na documentacao do GitHub.
+        os: [ ubuntu-latest, windows-latest, macos-latest, macos-15-intel ]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - uses: actions/checkout@v4
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
         with:
-          java-version: |
-            20
-            21
-            22
-          distribution: adopt
-          mvn-toolchain-vendor: AdoptOpenJDK
+          java-version: 25
+          distribution: temurin
+          mvn-toolchain-vendor: Eclipse Adoptium
           cache: maven
-      - name: Compile, run tests, and package (JDK 20/21/22)
-        run: mvn -B package
+      - name: Cache small models used by the tests
+        uses: actions/cache@v4
+        with:
+          path: |
+            bitubi-inference-4j-tests/models
+            bitubi-inference-4j-net/models
+          key: models-qwen2.5-0.5b-jq4-tinyllama-q4
+      # TestSample baixa modelos de varios GB e e excluido da CI.
+      - name: Compile, run tests, and package (JDK 25)
+        env:
+          SMOKE_MODEL: "1"
+          SMOKE_RELAXED: "1" # a referencia de texto foi gravada em outro hardware: aqui so exige texto nao vazio
+        run: ./mvnw -B package '-Dtest=!TestSample' -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Performance snapshot (informational)
+        run: |
+          docs/benchmarks/run-perf.sh "$JAVA_HOME" | tee perf.txt
+          { echo '### Desempenho em ${{ matrix.os }}'; echo '```'; cat perf.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
