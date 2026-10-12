@@ -122,6 +122,7 @@ public final class PanamaTensorOperations implements TensorOperations {
                 case Q4 -> switch (vectorType) {
                     case AVX_256 -> new GemmerF32Q4_256(K, a, b, result, aColumnOffset, bColumnOffset, rOffset);
                     case AVX_512 -> new GemmerF32Q4_512(K, a, b, result, aColumnOffset, bColumnOffset, rOffset);
+                    case ARM_128 -> new GemmerF32Q4_arm(K, a, b, result, aColumnOffset, bColumnOffset, rOffset);
                     default -> throw new UnsupportedOperationException(vectorType.name());
                 };
                 default -> throw new UnsupportedOperationException(b.dType().name());
@@ -282,6 +283,67 @@ public final class PanamaTensorOperations implements TensorOperations {
                 c.set(acc1.reduceLanes(VectorOperators.ADD), i, j + 1 + rOffset);
                 // c.set(acc2.reduceLanes(VectorOperators.ADD), i, j + 2);
                 // c.set(acc3.reduceLanes(VectorOperators.ADD), i, j + 3);
+            };
+        }
+    }
+
+    /** F32 x Q4 with 128-bit vectors (ARM NEON / Apple Silicon). Same math as GemmerF32Q4_256, 4 lanes per vector. */
+    private class GemmerF32Q4_arm extends Gemmer {
+        final BiIntConsumer matmul1x1;
+
+        final Q4ByteBufferTensor b;
+        final FloatBufferTensor a;
+
+        GemmerF32Q4_arm(int k, AbstractTensor ta, AbstractTensor tb, AbstractTensor c, int ith, int nth, int rOffset) {
+            super(k, ta, tb, c, ith, nth, rOffset);
+
+            this.a = (FloatBufferTensor) ta;
+            this.b = (Q4ByteBufferTensor) tb;
+
+            this.matmul1x1 = initMatmul1x1();
+        }
+
+        @Override
+        protected int pickKernel(int m0, int m, int n0, int n) {
+            kernel(m0, m, 1, n0, n, 1, matmul1x1);
+            return (1 << 4) | 1;
+        }
+
+        protected BiIntConsumer initMatmul1x1() {
+            return (i, j) -> {
+                int aoffset = aColumnOffset;
+                int boffset = bColumnOffset;
+                int alim = aoffset + k;
+                int blim = boffset + k;
+                int slen = Q4ByteBufferTensor.BLOCK_SIZE;
+                FloatVector acc = FloatVector.zero(FloatVector.SPECIES_128);
+
+                for (; aoffset < alim && boffset < blim; aoffset += slen, boffset += slen) {
+                    FloatVector scale = FloatVector.broadcast(FloatVector.SPECIES_128, b.getFactorForIndex(j, boffset));
+
+                    // 16 bytes -> 32 4bit values: low nibbles are the first half of the block, high nibbles the second
+                    var b0 = b.getVector(ByteVector.SPECIES_128, j, boffset);
+                    var b0lo = b0.and(Q4_BYTE_MASK_128).sub(Q4_BYTE_SUB_128);
+                    var b0hi = b0.lanewise(VectorOperators.LSHR, Q4_BYTE_SHIFT_128).sub(Q4_BYTE_SUB_128);
+
+                    // BLOCK_SIZE floats, 4 per vector
+                    var af0 = a.getVector(FloatVector.SPECIES_128, i, aoffset).mul(b0lo.castShape(FloatVector.SPECIES_128, 0));
+                    var af1 = a.getVector(FloatVector.SPECIES_128, i, aoffset + 4).mul(b0lo.castShape(FloatVector.SPECIES_128, 1));
+                    var af2 = a.getVector(FloatVector.SPECIES_128, i, aoffset + 8).mul(b0lo.castShape(FloatVector.SPECIES_128, 2));
+                    var af3 = a.getVector(FloatVector.SPECIES_128, i, aoffset + 12).mul(b0lo.castShape(FloatVector.SPECIES_128, 3));
+                    var af4 = a.getVector(FloatVector.SPECIES_128, i, aoffset + Q4ByteBufferTensor.HALF_BLOCK)
+                        .mul(b0hi.castShape(FloatVector.SPECIES_128, 0));
+                    var af5 = a.getVector(FloatVector.SPECIES_128, i, aoffset + Q4ByteBufferTensor.HALF_BLOCK + 4)
+                        .mul(b0hi.castShape(FloatVector.SPECIES_128, 1));
+                    var af6 = a.getVector(FloatVector.SPECIES_128, i, aoffset + Q4ByteBufferTensor.HALF_BLOCK + 8)
+                        .mul(b0hi.castShape(FloatVector.SPECIES_128, 2));
+                    var af7 = a.getVector(FloatVector.SPECIES_128, i, aoffset + Q4ByteBufferTensor.HALF_BLOCK + 12)
+                        .mul(b0hi.castShape(FloatVector.SPECIES_128, 3));
+
+                    acc = af0.add(af1).add(af2).add(af3).add(af4).add(af5).add(af6).add(af7).fma(scale, acc);
+                }
+
+                c.set(acc.reduceLanes(VectorOperators.ADD), i, j + rOffset);
             };
         }
     }
