@@ -20,6 +20,7 @@ import ao.bitubi.inference4j.safetensors.DType;
 import ao.bitubi.inference4j.safetensors.SafeTensorSupport;
 import ao.bitubi.inference4j.safetensors.prompt.PromptContext;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.UUID;
 import org.junit.Assume;
 import org.junit.Test;
@@ -77,6 +78,8 @@ public class PerfBaselineTest {
             decodeSum += r.generatedTokens / (double) Math.max(1, r.generateTimeMs) * 1000.0;
         }
 
+        if ("1".equals(System.getenv("PERF_NMT"))) printNativeMemorySummary();
+
         Runtime rt = Runtime.getRuntime();
         long usedMb = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
         System.out.printf(
@@ -89,5 +92,21 @@ public class PerfBaselineTest {
             usedMb,
             procStatusMb("VmHWM")
         );
+    }
+
+    /** Needs -XX:NativeMemoryTracking=summary. Prints one NMT line per JVM memory category (committed, in MB). */
+    private static void printNativeMemorySummary() {
+        try {
+            String jcmd = Path.of(System.getProperty("java.home"), "bin", "jcmd").toString();
+            Process p = new ProcessBuilder(jcmd, String.valueOf(ProcessHandle.current().pid()), "VM.native_memory", "summary")
+                .redirectErrorStream(true)
+                .start();
+            for (String line : new String(p.getInputStream().readAllBytes()).split("\n")) {
+                if (line.contains("committed=") && (line.startsWith("Total") || line.startsWith("-"))) System.out.println("NMT " + line.trim());
+            }
+            p.waitFor();
+        } catch (Exception e) {
+            System.out.println("NMT unavailable: " + e);
+        }
     }
 }

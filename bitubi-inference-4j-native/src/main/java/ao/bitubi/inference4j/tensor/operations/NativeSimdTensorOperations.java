@@ -38,17 +38,8 @@ public class NativeSimdTensorOperations implements TensorOperations {
     public static final int HAS_F16C = NativeSimd.HAS_F16C();
     public static final int HAS_AVX2 = NativeSimd.HAS_AVX2();
 
-    private static final TensorOperations delegate;
-
-    static {
-        TensorOperations tmp;
-        try {
-            tmp = new PanamaTensorOperations(MachineSpec.VECTOR_TYPE);
-        } catch (Throwable t) {
-            tmp = new NaiveTensorOperations();
-        }
-        delegate = tmp;
-    }
+    // Operations that are not GEMMs (accumulate, saxpy, scale, quantize) run on the Java Vector API
+    private static final TensorOperations delegate = new PanamaTensorOperations(MachineSpec.VECTOR_TYPE);
 
     final int flags;
 
