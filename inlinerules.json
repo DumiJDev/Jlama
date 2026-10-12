@@ -2,11 +2,11 @@
     {
         match: ["*.*"],
         inline: [
-            "+com.github.tjake.jlama.tensor.operations.PanamaTensorOperations::dotProduct*",
-            "+com.github.tjake.jlama.tensor.operations.PanamaTensorOperations::quantize*",
-            "+com.github.tjake.jlama.tensor.operations.PanamaTensorOperations*::mpack*",
-            "+com.github.tjake.jlama.tensor.AbstractTensor::getOffset*",
-            "+com.github.tjake.jlama.tensor.*::getVector*"
+            "+ao.bitubi.inference4j.tensor.operations.PanamaTensorOperations::dotProduct*",
+            "+ao.bitubi.inference4j.tensor.operations.PanamaTensorOperations::quantize*",
+            "+ao.bitubi.inference4j.tensor.operations.PanamaTensorOperations*::mpack*",
+            "+ao.bitubi.inference4j.tensor.AbstractTensor::getOffset*",
+            "+ao.bitubi.inference4j.tensor.*::getVector*"
         ]
     }
 ]

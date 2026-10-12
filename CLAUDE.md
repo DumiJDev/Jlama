@@ -24,13 +24,13 @@ Spec e plano: `docs/superpowers/specs/` e `docs/superpowers/plans/`. Ordem dos s
 
 ```bash
 export JAVA_HOME=$HOME/.sdkman/candidates/java/25.0.3-amzn
-./mvnw -B clean package                       # use package, não test: o jlama-tests precisa do JAR multi-release
-./mvnw -B -pl jlama-tests -am package -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false
+./mvnw -B clean package                       # use package, não test: o bitubi-inference-4j-tests precisa do JAR multi-release
+./mvnw -B -pl bitubi-inference-4j-tests -am package -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
 - `SMOKE_MODEL=1` liga o teste de fumaça; `SMOKE_RECORD=1` grava a referência; `SMOKE_RELAXED=1` só exige texto não vazio.
 - `PERF_BASELINE=1` liga `PerfBaselineTest` (tokens/s).
-- `TestSample` e alguns testes do `jlama-net` baixam modelos do Hugging Face; `Connection reset` é rede,
+- `TestSample` e alguns testes do `bitubi-inference-4j-net` baixam modelos do Hugging Face; `Connection reset` é rede,
   repita ou baixe com `curl -L -C -` (o downloader pula arquivos com o tamanho esperado).
 - `git reset --hard` e `rm` em massa são bloqueados neste ambiente; edite arquivos CRLF por script.
 

@@ -6,7 +6,7 @@ tools: Read, Grep, Glob, Bash, Edit, Write, WebFetch, WebSearch
 
 Você é o especialista de servidor do bitubi-inference-4j. Leia o `CLAUDE.md` antes.
 
-Âmbito: `jlama-net` (`openai/`, `openai_spec.yaml`) e `jlama-cli` (`commands/ApiServiceCommand`, `src/main/webapp`).
+Âmbito: `bitubi-inference-4j-net` (`openai/`, `openai_spec.yaml`) e `bitubi-inference-4j-cli` (`commands/ApiServiceCommand`, `src/main/webapp`).
 
 Metas (sub-projeto 2, só depois de o motor estar estável):
 - Melhorar a API OpenAI: streaming, tools, embeddings, `/v1/models`.

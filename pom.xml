@@ -4,8 +4,8 @@
   child.project.url.inherit.append.path="false">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.github.tjake</groupId>
-  <artifactId>jlama-parent</artifactId>
+  <groupId>ao.bitubi</groupId>
+  <artifactId>bitubi-inference-4j-parent</artifactId>
   <version>${revision}</version>
 
   <name>Jlama Parent</name>
@@ -157,7 +157,7 @@
                 --enable-preview
                 --enable-native-access=ALL-UNNAMED
                 --add-exports java.base/jdk.internal.vm.vector=ALL-UNNAMED
-                -Djava.library.path=../jlama-native/target/native-lib-only
+                -Djava.library.path=../bitubi-inference-4j-native/target/native-lib-only
                 </argLine>
               </configuration>
             </execution>
@@ -269,11 +269,11 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
-          <module>jlama-core</module>
-          <module>jlama-native</module>
-          <module>jlama-net</module>
-          <module>jlama-cli</module>
-          <module>jlama-tests</module>
+          <module>bitubi-inference-4j-core</module>
+          <module>bitubi-inference-4j-native</module>
+          <module>bitubi-inference-4j-net</module>
+          <module>bitubi-inference-4j-cli</module>
+          <module>bitubi-inference-4j-tests</module>
       </modules>
     </profile>
     <profile>
@@ -282,10 +282,10 @@
         <maven.install.skip>false</maven.install.skip>
       </properties>
       <modules>
-        <module>jlama-core</module>
-        <module>jlama-native</module>
-        <module>jlama-net</module>
-        <module>jlama-cli</module>
+        <module>bitubi-inference-4j-core</module>
+        <module>bitubi-inference-4j-native</module>
+        <module>bitubi-inference-4j-net</module>
+        <module>bitubi-inference-4j-cli</module>
       </modules>
       <distributionManagement>
         <snapshotRepository>

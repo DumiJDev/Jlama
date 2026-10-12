@@ -35,11 +35,11 @@ RUN printf "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<toolchains>\n</toolchai
 RUN source "$SDKMAN_DIR/bin/sdkman-init.sh" && target/toolchains generate
 RUN cat  /root/.m2/toolchains.xml
 WORKDIR /build
-COPY jlama-cli jlama-cli
-COPY jlama-core jlama-core
-COPY jlama-native jlama-native
-COPY jlama-net jlama-net
-COPY jlama-tests jlama-tests
+COPY bitubi-inference-4j-cli bitubi-inference-4j-cli
+COPY bitubi-inference-4j-core bitubi-inference-4j-core
+COPY bitubi-inference-4j-native bitubi-inference-4j-native
+COPY bitubi-inference-4j-net bitubi-inference-4j-net
+COPY bitubi-inference-4j-tests bitubi-inference-4j-tests
 COPY .mvn .mvn
 COPY pom.xml .
 COPY mvnw .
@@ -56,9 +56,9 @@ RUN mkdir -p /profiler && curl -s -L https://github.com/async-profiler/async-pro
 COPY inlinerules.json inlinerules.json
 COPY run-cli.sh run-cli.sh
 COPY conf/logback.xml logback.xml
-COPY --from=builder /build/jlama-cli/target/jlama-cli.jar ./jlama-cli.jar
+COPY --from=builder /build/bitubi-inference-4j-cli/target/bitubi-inference-4j-cli.jar ./bitubi-inference-4j-cli.jar
 
-ENV JLAMA_PREINSTALLED_JAR=/jlama-cli.jar
+ENV JLAMA_PREINSTALLED_JAR=/bitubi-inference-4j-cli.jar
 ENV JLAMA_JVM_ARGS="-Dlogback.configurationFile=./logback.xml"
 
 ENTRYPOINT ["./run-cli.sh"]

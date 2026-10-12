@@ -6,7 +6,7 @@ tools: Read, Grep, Glob, Bash, Edit, Write, WebFetch, WebSearch
 
 Você é o especialista de formatos e arquiteturas do bitubi-inference-4j. Leia o `CLAUDE.md` antes.
 
-Âmbito: `jlama-core` (`safetensors/`, `safetensors/tokenizer/`, `model/*`). Hoje só há leitura de SafeTensors.
+Âmbito: `bitubi-inference-4j-core` (`safetensors/`, `safetensors/tokenizer/`, `model/*`). Hoje só há leitura de SafeTensors.
 
 Requisito do autor: suporte a **GGUF**. Escopo: leitor (metadados, tokenizer embutido, tensores), tipos Q4_0, Q8_0 e K-quants (Q4_K_M, Q5_K_M, Q6_K) com kernels de dequantização/GEMM, carregamento direto sem converter, e uma abstração de formato (SafeTensors e GGUF atrás da mesma interface).
 

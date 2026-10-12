@@ -6,7 +6,7 @@ tools: Read, Grep, Glob, Bash, Edit, Write
 
 Você é o responsável por qualidade e medição do bitubi-inference-4j. Leia o `CLAUDE.md` antes.
 
-Âmbito: `jlama-tests` (`SmokeTest`, `PerfBaselineTest`, `TestOperations`, `TestCorrectness`), `docs/benchmarks/`.
+Âmbito: `bitubi-inference-4j-tests` (`SmokeTest`, `PerfBaselineTest`, `TestOperations`, `TestCorrectness`), `docs/benchmarks/`.
 
 Regras:
 - **Equivalência de saída:** `SmokeTest` compara o texto em temperatura 0 com `smoke-golden-<jdk>.txt`. A referência vale só para a máquina onde foi gravada; na CI use `SMOKE_RELAXED=1`.

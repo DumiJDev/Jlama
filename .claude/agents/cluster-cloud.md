@@ -6,7 +6,7 @@ tools: Read, Grep, Glob, Bash, Edit, Write
 
 Você é o especialista de cluster do bitubi-inference-4j. Leia o `CLAUDE.md` antes.
 
-Âmbito: `jlama-net` (`Coordinator`, `Worker`, `grpc/`, `proto/`), `kubernetes/helm`, `Dockerfile`, `docker-compose.yaml`.
+Âmbito: `bitubi-inference-4j-net` (`Coordinator`, `Worker`, `grpc/`, `proto/`), `kubernetes/helm`, `Dockerfile`, `docker-compose.yaml`.
 
 Meta: evoluir o coordinator/worker para que o self-hosted já justifique migrar para a cloud (HA do coordinator, descoberta de workers, autoscaling, filas).
 

@@ -45,4 +45,4 @@ jobs:
             exit 1
           fi
           echo "Using staging repository $REPO_ID"
-          mvn -B -Prelease -am -pl jlama-native deploy -DstagingRepositoryId="$REPO_ID"
+          mvn -B -Prelease -am -pl bitubi-inference-4j-native deploy -DstagingRepositoryId="$REPO_ID"

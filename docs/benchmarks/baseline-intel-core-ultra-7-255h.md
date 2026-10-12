@@ -18,4 +18,4 @@ A variação entre execuções é grande (até 2x no prefill), provavelmente por
 Uma mudança só conta como regressão se ficar abaixo do mínimo da faixa em repetições seguidas; para
 comparar ganhos de otimização, rode mais de 3 vezes e fixe a afinidade de CPU.
 
-Saída de referência (temperatura 0): `jlama-tests/src/test/resources/smoke-golden-25.txt`.
+Saída de referência (temperatura 0): `bitubi-inference-4j-tests/src/test/resources/smoke-golden-25.txt`.

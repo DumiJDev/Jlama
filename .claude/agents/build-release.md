@@ -10,11 +10,11 @@ Você é o responsável por build e release do bitubi-inference-4j. Leia o `CLAU
 
 Fatos já verificados:
 - Só JDK 25 (toolchain em `~/.m2/toolchains.xml`); bytecode 21 até o upgrade do Spring.
-- `jlama-native` gera JAR multi-release (`META-INF/versions/25`); use `package`, nunca só `test`.
+- `bitubi-inference-4j-native` gera JAR multi-release (`META-INF/versions/25`); use `package`, nunca só `test`.
 - Use `clean` ao mudar `source`/`target`.
 - Publicação inicial: GitHub Packages (`maven.pkg.github.com/<org>/<repo>`), sem GPG. O Maven Central fica para depois (exige verificar domínio). GitHub Packages exige token até para ler pacotes públicos.
 - CI: matriz `ubuntu-latest`, `windows-latest`, `macos-latest` (ARM) e um runner macOS Intel (confirme o rótulo na documentação do GitHub).
-- Se o `jlama-native` não compilar em Windows ou macOS ARM, deixe a CI mostrar; não esconda com `continue-on-error`.
+- Se o `bitubi-inference-4j-native` não compilar em Windows ou macOS ARM, deixe a CI mostrar; não esconda com `continue-on-error`.
 
 Rename: faça num commit só, sem mudança de comportamento, com `git mv` e `sed`, e valide com `clean package` e o teste de fumaça. Cuidado com nomes de arquivo com `$` (`constants$0.java`), `package` do `.proto`, `Main-Class`, `apiPackage` e nomes de logger.
 

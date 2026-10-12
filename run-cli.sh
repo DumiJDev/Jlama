@@ -24,7 +24,7 @@ if [[ "$JAVA_MAJOR_VERSION" -lt 25 ]]; then
 fi
 
 # Define the path of the relative JAR
-JLAMA_RELATIVE_JAR="./jlama-cli/target/jlama-cli.jar"
+JLAMA_RELATIVE_JAR="./bitubi-inference-4j-cli/target/bitubi-inference-4j-cli.jar"
 # Path to the logback.xml
 LOGBACK_CONFIG="./conf/logback.xml"
 
