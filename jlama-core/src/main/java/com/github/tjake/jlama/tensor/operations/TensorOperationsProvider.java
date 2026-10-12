@@ -25,7 +25,9 @@ public class TensorOperationsProvider {
     }
 
     private static final Logger logger = LoggerFactory.getLogger(TensorOperationsProvider.class);
-    private static final boolean forcePanama = Boolean.getBoolean("jlama.force_panama_tensor_operations");
+    // Panama (Vector API) is the default. The native backend is opt-in: on JDK 25 it produced wrong
+    // results in the smoke test, so it must be requested explicitly with -Djlama.use_native_tensor_operations=true
+    private static final boolean useNative = Boolean.getBoolean("jlama.use_native_tensor_operations");
 
     private static final String lock = "lock";
     private static TensorOperationsProvider instance;
@@ -50,7 +52,7 @@ public class TensorOperationsProvider {
 
         TensorOperations pick = null;
 
-        if (!forcePanama) {
+        if (useNative) {
             try {
                 Class<? extends TensorOperations> nativeClazz = (Class<? extends TensorOperations>) Class.forName(
                     "com.github.tjake.jlama.tensor.operations.NativeSimdTensorOperations"
