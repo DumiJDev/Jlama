@@ -10,7 +10,7 @@ function usage() {
 cat << EOF
     usage: $0 [GCLOUD_PROJECT_NAME] [GKE_CLUSTER_NAME]
 
-    This script will create a gke cluster to run a distributed jlama service deployment.
+    This script will create a gke cluster to run a distributed bi4j service deployment.
 EOF
 }
 
@@ -58,15 +58,15 @@ fi
 
 echo "Cluster created successfully"
 
-# gcloud storage buckets add-iam-policy-binding $BUCKET     --member "serviceAccount:jlama-admin@$PROJECT.iam.gserviceaccount.com"     --role "roles/storage.objectViewer"
-# gcloud projects add-iam-policy-binding $PROJECT     --member "serviceAccount:jlama-admin@$PROJECT.iam.gserviceaccount.com"     --role "roles/storage.objectViewer"
-# gcloud iam service-accounts add-iam-policy-binding jlama-admin@jlama-414804.iam.gserviceaccount.com     --role roles/iam.workloadIdentityUser     --member "serviceAccount:$PROJECT.svc.id.goog[jlama/jlama-admin]"
+# gcloud storage buckets add-iam-policy-binding $BUCKET     --member "serviceAccount:bi4j-admin@$PROJECT.iam.gserviceaccount.com"     --role "roles/storage.objectViewer"
+# gcloud projects add-iam-policy-binding $PROJECT     --member "serviceAccount:bi4j-admin@$PROJECT.iam.gserviceaccount.com"     --role "roles/storage.objectViewer"
+# gcloud iam service-accounts add-iam-policy-binding bi4j-admin@$PROJECT.iam.gserviceaccount.com     --role roles/iam.workloadIdentityUser     --member "serviceAccount:$PROJECT.svc.id.goog[bi4j/bi4j-admin]"
 
 gcloud container clusters get-credentials $CLUSTER --zone $REGION
 
-kubectl create namespace jlama
-kubectl create serviceaccount jlama-admin --namespace jlama
-kubectl annotate serviceaccount jlama-admin --namespace jlama iam.gke.io/gcp-service-account=jlama-admin@$PROJECT.iam.gserviceaccount.com
+kubectl create namespace bi4j
+kubectl create serviceaccount bi4j-admin --namespace bi4j
+kubectl annotate serviceaccount bi4j-admin --namespace bi4j iam.gke.io/gcp-service-account=bi4j-admin@$PROJECT.iam.gserviceaccount.com
 
-echo "Now you can deploy the jlama service with the following command:"
-echo "helm install -n jlama jlama helm/jlama -f gke_values.yaml"
+echo "Now you can deploy the bi4j service with the following command:"
+echo "helm install -n bi4j bi4j helm/bi4j -f gke_values.yaml"

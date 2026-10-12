@@ -19,7 +19,7 @@ import static ao.bitubi.inference4j.model.ModelSupport.loadModel;
 
 import ao.bitubi.inference4j.model.AbstractModel;
 import ao.bitubi.inference4j.model.functions.Generator;
-import ao.bitubi.inference4j.net.grpc.JlamaService;
+import ao.bitubi.inference4j.net.grpc.Bi4jService;
 import ao.bitubi.inference4j.safetensors.Config;
 import ao.bitubi.inference4j.safetensors.DType;
 import ao.bitubi.inference4j.safetensors.HTTPSafeTensorLoader;
@@ -58,7 +58,7 @@ public class Coordinator implements Generator {
     private final boolean splitLayers;
     private final Server server;
     private final AbstractModel model;
-    private final JlamaService service;
+    private final Bi4jService service;
 
     public Coordinator(
         File modelPath,
@@ -100,7 +100,7 @@ public class Coordinator implements Generator {
         if (!splitHeads && !splitLayers) {
             throw new IllegalArgumentException("Must split by heads and/or layers");
         }
-        this.service = new JlamaService(model, workerCount, splitHeads, splitLayers);
+        this.service = new Bi4jService(model, workerCount, splitHeads, splitLayers);
         this.server = ServerBuilder.forPort(port).maxInboundMessageSize(MESSAGE_SIZE).addService(service).build();
     }
 

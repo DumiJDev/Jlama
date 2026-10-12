@@ -15,6 +15,7 @@
  */
 package ao.bitubi.inference4j.net.grpc;
 
+import ao.bitubi.inference4j.util.Bi4jProperties;
 import ao.bitubi.inference4j.model.AbstractModel;
 import ao.bitubi.inference4j.net.*;
 import ao.bitubi.inference4j.safetensors.Config;
@@ -38,13 +39,13 @@ import org.jctools.queues.MpmcArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JlamaService extends JlamaServiceGrpc.JlamaServiceImplBase {
-    private static final long idealBillionParamsPerWorker = Integer.getInteger("jlama.ideal_b_params", 3);
+public class Bi4jService extends Bi4jServiceGrpc.Bi4jServiceImplBase {
+    private static final long idealBillionParamsPerWorker = Bi4jProperties.getInteger("ideal_b_params", 3);
 
     private static final int LAYER_IDX = 0;
     private static final int HEAD_IDX = 1;
 
-    private static final Logger logger = LoggerFactory.getLogger(JlamaService.class);
+    private static final Logger logger = LoggerFactory.getLogger(Bi4jService.class);
     private final AbstractModel model;
     private final int workerCount;
     private final boolean splitHeads;
@@ -61,7 +62,7 @@ public class JlamaService extends JlamaServiceGrpc.JlamaServiceImplBase {
 
     private final ConcurrentMap<String, MpmcArrayQueue<Pair<CombineRequest, StreamObserver<CombineResponse>>>> combinations;
 
-    public JlamaService(AbstractModel model, int workerCount, boolean splitHeads, boolean splitLayers) {
+    public Bi4jService(AbstractModel model, int workerCount, boolean splitHeads, boolean splitLayers) {
         Preconditions.checkArgument(
             !splitHeads || splitLayers || workerCount <= model.getConfig().numberOfKeyValueHeads,
             "Worker count must be less than or equal to number of KV heads if not splitting layers"

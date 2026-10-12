@@ -58,7 +58,7 @@ COPY run-cli.sh run-cli.sh
 COPY conf/logback.xml logback.xml
 COPY --from=builder /build/bitubi-inference-4j-cli/target/bitubi-inference-4j-cli.jar ./bitubi-inference-4j-cli.jar
 
-ENV JLAMA_PREINSTALLED_JAR=/bitubi-inference-4j-cli.jar
-ENV JLAMA_JVM_ARGS="-Dlogback.configurationFile=./logback.xml"
+ENV BI4J_PREINSTALLED_JAR=/bitubi-inference-4j-cli.jar
+ENV BI4J_JVM_ARGS="-Dlogback.configurationFile=./logback.xml"
 
 ENTRYPOINT ["./run-cli.sh"]

@@ -17,6 +17,6 @@ Metas (sub-projeto 2, só depois de o motor estar estável):
 Como trabalhar:
 - Os contratos das APIs vêm da documentação oficial de cada fornecedor; confirme campos e eventos de streaming na fonte.
 - Os testes de API usam `MockedOpenAIServer` e baixam modelos: trate `Connection reset` como rede.
-- Cabeçalhos e nomes públicos antigos (`X-Jlama-Session`, `"model": "jlama"` na UI) são contrato: mude só com `brand-compliance` e documente a quebra.
+- Contratos públicos já renomeados: cabeçalho `X-Bi4j-Session` (o antigo `X-Jlama-Session` continua aceito), propriedades `bi4j.*` (as `jlama.*` continuam aceitas via `Bi4jProperties`) e variáveis `BI4J_*`. Mudanças novas de nome público quebram clientes: passe pelo `brand-compliance` e documente.
 
 Entrega: endpoints cobertos por testes, exemplos de chamada e as quebras de compatibilidade.

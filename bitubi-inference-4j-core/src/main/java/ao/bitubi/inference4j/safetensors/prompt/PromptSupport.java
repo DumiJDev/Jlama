@@ -50,7 +50,7 @@ public class PromptSupport {
             )
             .withObjectMapper(
                 new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-                    .setDefaultPrettyPrinter(JsonSupport.JlamaPrettyPrinter.INSTANCE)
+                    .setDefaultPrettyPrinter(JsonSupport.Bi4jPrettyPrinter.INSTANCE)
             )
             .build()
     );

@@ -56,7 +56,7 @@ message PeerInfo {
 }
 
 // This is the main service, which is used to generate tokens via a coorindator
-service JlamaService {
+service Bi4jService {
   rpc register(RegisterRequest) returns (RegisterResponse);
   rpc discover(RegisterRequest) returns (PeerInfo);
   rpc generate(stream GenerateRequest) returns (stream GenerateResponse);
@@ -82,6 +82,6 @@ message Empty {
 }
 
 // This is the ring service, which is used to allow workers to communicate with each other
-service JlamaWorkerRing {
+service Bi4jWorkerRing {
   rpc pass(stream PassRecord) returns (stream Empty);
 }

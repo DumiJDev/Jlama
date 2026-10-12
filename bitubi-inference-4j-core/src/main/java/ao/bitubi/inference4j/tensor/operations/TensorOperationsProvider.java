@@ -15,6 +15,7 @@
  */
 package ao.bitubi.inference4j.tensor.operations;
 
+import ao.bitubi.inference4j.util.Bi4jProperties;
 import ao.bitubi.inference4j.util.MachineSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +27,8 @@ public class TensorOperationsProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(TensorOperationsProvider.class);
     // Panama (Vector API) is the default. The native backend is opt-in: on JDK 25 it produced wrong
-    // results in the smoke test, so it must be requested explicitly with -Djlama.use_native_tensor_operations=true
-    private static final boolean useNative = Boolean.getBoolean("jlama.use_native_tensor_operations");
+    // results in the smoke test, so it must be requested explicitly with -Dbi4j.use_native_tensor_operations=true
+    private static final boolean useNative = Bi4jProperties.getBoolean("use_native_tensor_operations");
 
     private static final String lock = "lock";
     private static TensorOperationsProvider instance;

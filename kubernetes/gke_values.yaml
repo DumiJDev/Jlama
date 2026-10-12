@@ -7,7 +7,7 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: "jlama-admin"
+  name: "bi4j-admin"
 
 image:
   repository: ghcr.io/bitubi-solutions/bitubi-inference-4j
@@ -23,13 +23,13 @@ coordinator:
   splitByLayer: true
   splitByHead: true
   includeWorker: false
-  jvmArgs: -Djava.net.preferIPv4Stack=true -Djlama.ideal_b_params=1
+  jvmArgs: -Djava.net.preferIPv4Stack=true -Dbi4j.ideal_b_params=1
   port: 8080
 
 worker:
   replicas: 4
   threads: 28
-  jvmArgs: -Djava.net.preferIPv4Stack=true -Djlama.use_hostname_as_workerid=true
+  jvmArgs: -Djava.net.preferIPv4Stack=true -Dbi4j.use_hostname_as_workerid=true
 
 securityContext:
   privileged: true

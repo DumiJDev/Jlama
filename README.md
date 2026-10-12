@@ -39,7 +39,7 @@ Requer **JDK 25 ou superior** (a Vector API ainda é um módulo em incubação: 
 Só o JDK 25 é testado; versões mais novas podem alterar a Vector API.
 
 Implementação de tensores: o padrão é Panama. O backend nativo é opcional e está desativado por padrão
-(`-Djlama.use_native_tensor_operations=true` para ativar); no JDK 25 ele ainda produz resultados incorretos.
+(`-Dbi4j.use_native_tensor_operations=true` para ativar; o prefixo antigo `jlama.` continua aceito); no JDK 25 ele ainda produz resultados incorretos.
 
 ## Início rápido
 

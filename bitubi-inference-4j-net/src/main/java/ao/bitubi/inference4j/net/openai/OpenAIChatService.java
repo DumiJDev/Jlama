@@ -40,7 +40,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class OpenAIChatService {
 
     private static final Logger logger = LoggerFactory.getLogger(OpenAIChatService.class);
-    private static final String JLAMA_SESSION_HEADER = "X-Jlama-Session";
+    private static final String SESSION_HEADER = "X-Bi4j-Session";
+    private static final String LEGACY_SESSION_HEADER = "X-Jlama-Session";
 
     @Autowired
     private Generator model;
@@ -63,9 +64,10 @@ public class OpenAIChatService {
 
         UUID id = UUID.randomUUID();
 
-        if (headers.containsKey(JLAMA_SESSION_HEADER)) {
+        String sessionHeader = headers.containsKey(SESSION_HEADER) ? SESSION_HEADER : LEGACY_SESSION_HEADER;
+        if (headers.containsKey(sessionHeader)) {
             try {
-                id = UUID.fromString(headers.get(JLAMA_SESSION_HEADER));
+                id = UUID.fromString(headers.get(sessionHeader));
             } catch (IllegalArgumentException e) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }

@@ -27,13 +27,13 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
-public class JlamaRingWorkerService extends JlamaWorkerRingGrpc.JlamaWorkerRingImplBase {
+public class Bi4jRingWorkerService extends Bi4jWorkerRingGrpc.Bi4jWorkerRingImplBase {
 
-    private static final Logger logger = LoggerFactory.getLogger(JlamaRingWorkerService.class);
+    private static final Logger logger = LoggerFactory.getLogger(Bi4jRingWorkerService.class);
 
     private final Worker worker;
 
-    public JlamaRingWorkerService(Worker worker) {
+    public Bi4jRingWorkerService(Worker worker) {
         this.worker = worker;
     }
 

@@ -17,7 +17,7 @@ package ao.bitubi.inference4j.net.openai;
 
 import ao.bitubi.inference4j.model.AbstractModel;
 import ao.bitubi.inference4j.model.ModelSupport;
-import ao.bitubi.inference4j.net.JlamaServiceTest;
+import ao.bitubi.inference4j.net.Bi4jServiceTest;
 import ao.bitubi.inference4j.safetensors.DType;
 import ao.bitubi.inference4j.safetensors.SafeTensorSupport;
 import java.io.File;
@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Configuration;
 @SpringBootConfiguration
 @Configuration
 public class MockedOpenAIServer {
-    private final JlamaServiceTest.MockConfig modelConfig = new JlamaServiceTest.MockConfig(128, 4096, 8192, 16, 12, 1e5f);
+    private final Bi4jServiceTest.MockConfig modelConfig = new Bi4jServiceTest.MockConfig(128, 4096, 8192, 16, 12, 1e5f);
 
     public static void main(String[] args) {
         SpringApplication.run(MockedOpenAIServer.class, args);

@@ -3,16 +3,16 @@ kind: StatefulSet
 metadata:
   annotations:
   labels:
-    app.kubernetes.io/name: jlama-coordinator
-    app.kubernetes.io/part-of: jlama
-  name: jlama-coordinator
+    app.kubernetes.io/name: bi4j-coordinator
+    app.kubernetes.io/part-of: bi4j
+  name: bi4j-coordinator
 spec:
-  serviceName: jlama-coordinator
+  serviceName: bi4j-coordinator
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: jlama-coordinator
-      app.kubernetes.io/part-of: jlama
+      app.kubernetes.io/name: bi4j-coordinator
+      app.kubernetes.io/part-of: bi4j
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -20,8 +20,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        app.kubernetes.io/name: jlama-coordinator
-        app.kubernetes.io/part-of: jlama
+        app.kubernetes.io/name: bi4j-coordinator
+        app.kubernetes.io/part-of: bi4j
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -39,11 +39,11 @@ spec:
         {{- end }}
         - {{ .Values.model }}
         env:
-        - name: JLAMA_JVM_ARGS_EXTRA
+        - name: BI4J_JVM_ARGS_EXTRA
           value: {{ .Values.coordinator.jvmArgs }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        name: jlama-coordinator
+        name: bi4j-coordinator
         securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}
         #livenessProbe:
@@ -79,13 +79,13 @@ spec:
       {{- end }}
       dnsConfig:
         searches:
-          - jlama-coordinator.{{ .Release.Namespace }}.svc.cluster.local
-          - jlama-worker.{{ .Release.Namespace }}.svc.cluster.local
+          - bi4j-coordinator.{{ .Release.Namespace }}.svc.cluster.local
+          - bi4j-worker.{{ .Release.Namespace }}.svc.cluster.local
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: jlama-coordinator
+  name: bi4j-coordinator
 spec:
   clusterIP: None
   ports:
@@ -98,5 +98,5 @@ spec:
       protocol: TCP
       name: grpc
   selector:
-    app.kubernetes.io/name: jlama-coordinator
-    app.kubernetes.io/part-of: jlama
+    app.kubernetes.io/name: bi4j-coordinator
+    app.kubernetes.io/part-of: bi4j

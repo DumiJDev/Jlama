@@ -37,7 +37,7 @@ public class JarSupport {
 
         if (lib != null) {
             try {
-                final File libpath = Files.createTempDirectory("jlama").toFile();
+                final File libpath = Files.createTempDirectory("bi4j").toFile();
                 libpath.deleteOnExit(); // just in case
 
                 File libfile = Paths.get(libpath.getAbsolutePath(), "lib" + libname + ext).toFile();

@@ -15,6 +15,7 @@
  */
 package ao.bitubi.inference4j.model;
 
+import ao.bitubi.inference4j.util.Bi4jProperties;
 import static ao.bitubi.inference4j.util.DebugSupport.debug;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -54,7 +55,7 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractModel implements Generator {
     private static final Logger logger = LoggerFactory.getLogger(AbstractModel.class);
 
-    private static final Integer MAX_BATCH_SIZE = Integer.getInteger("jlama.max_batch_size", 256);
+    private static final Integer MAX_BATCH_SIZE = Bi4jProperties.getInteger("max_batch_size", 256);
 
     public enum InferenceType {
         // Used for distributed inference

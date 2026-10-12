@@ -87,7 +87,7 @@ public final class PanamaTensorOperations implements TensorOperations {
      *  m×k * n×k → m×n if bᵀ
      *  k×m * n×k → m×n if aᵀ and bᵀ
      *
-     *  In Jlama we use row major ordering
+     *  Here we use row major ordering
      *  So: k×m * n×k → m×n
      *  EmbeddingxBatch * WeightsxEmbedding → BATCHxEmbedding
      */

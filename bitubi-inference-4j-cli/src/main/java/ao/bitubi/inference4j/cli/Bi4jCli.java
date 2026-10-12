@@ -15,6 +15,7 @@
  */
 package ao.bitubi.inference4j.cli;
 
+import ao.bitubi.inference4j.util.Bi4jProperties;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.core.ConsoleAppender;
@@ -193,6 +194,6 @@ public class Bi4jCli implements Runnable {
 
         root.addAppender(logConsoleAppender);
         root.setAdditive(false);
-        root.setLevel(Boolean.getBoolean("jlama.debug") ? Level.DEBUG : Level.INFO);
+        root.setLevel(Bi4jProperties.getBoolean("debug") ? Level.DEBUG : Level.INFO);
     }
 }

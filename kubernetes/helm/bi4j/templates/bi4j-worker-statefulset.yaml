@@ -3,16 +3,16 @@ kind: StatefulSet
 metadata:
   annotations:
   labels:
-    app.kubernetes.io/name: jlama-worker
-    app.kubernetes.io/part-of: jlama
-  name: jlama-worker
+    app.kubernetes.io/name: bi4j-worker
+    app.kubernetes.io/part-of: bi4j
+  name: bi4j-worker
 spec:
-  serviceName: jlama-worker
+  serviceName: bi4j-worker
   replicas: {{ .Values.worker.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: jlama-worker
-      app.kubernetes.io/part-of: jlama
+      app.kubernetes.io/name: bi4j-worker
+      app.kubernetes.io/part-of: bi4j
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -20,8 +20,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        app.kubernetes.io/name: jlama-worker
-        app.kubernetes.io/part-of: jlama
+        app.kubernetes.io/name: bi4j-worker
+        app.kubernetes.io/part-of: bi4j
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -30,17 +30,17 @@ spec:
       containers:
       - args:
         - cluster-worker
-        - --coordinator=jlama-coordinator-0
+        - --coordinator=bi4j-coordinator-0
         {{- if .Values.worker.threads }}
         - --threads={{ .Values.worker.threads }}
         {{- end }}
         - {{ .Values.model }}
         env:
-        - name: JLAMA_JVM_ARGS_EXTRA
+        - name: BI4J_JVM_ARGS_EXTRA
           value: {{ .Values.worker.jvmArgs }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        name: jlama-worker
+        name: bi4j-worker
         securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}
         ports:
@@ -70,13 +70,13 @@ spec:
       {{- end }}
       dnsConfig:
         searches:
-          - jlama-coordinator.{{ .Release.Namespace }}.svc.cluster.local
-          - jlama-worker.{{ .Release.Namespace }}.svc.cluster.local
+          - bi4j-coordinator.{{ .Release.Namespace }}.svc.cluster.local
+          - bi4j-worker.{{ .Release.Namespace }}.svc.cluster.local
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: jlama-worker
+  name: bi4j-worker
 spec:
   clusterIP: None
   ports:
@@ -85,5 +85,5 @@ spec:
       protocol: TCP
       name: grpc
   selector:
-    app.kubernetes.io/name: jlama-worker
-    app.kubernetes.io/part-of: jlama
+    app.kubernetes.io/name: bi4j-worker
+    app.kubernetes.io/part-of: bi4j

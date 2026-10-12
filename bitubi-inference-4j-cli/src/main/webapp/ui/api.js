@@ -5,10 +5,10 @@ function postRequest(input, session, signal) {
   return fetch(URL, {
     method: 'POST',
     headers: {
-      'X-Jlama-Session': session,
+      'X-Bi4j-Session': session,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({"model": "jlama", "messages": [{"role": "user", "content": input}], "stream": true }),
+    body: JSON.stringify({"model": "bi4j", "messages": [{"role": "user", "content": input}], "stream": true }),
     signal: signal
   });
 }

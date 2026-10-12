@@ -32,7 +32,7 @@ public class NativeSimdTensorOperations implements TensorOperations {
     private static final Logger logger = LoggerFactory.getLogger(NativeSimdTensorOperations.class);
 
     static {
-        if (!JarSupport.maybeLoadLibrary("jlama")) System.loadLibrary("jlama");
+        if (!JarSupport.maybeLoadLibrary("bi4j")) System.loadLibrary("bi4j");
     }
 
     public static final int HAS_F16C = NativeSimd.HAS_F16C();

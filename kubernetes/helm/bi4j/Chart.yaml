@@ -1,6 +1,6 @@
 apiVersion: v2
-name: jlama
-description: A Helm chart deploying distibuted Jlama on Kubernetes
+name: bi4j
+description: A Helm chart deploying distributed bitubi-inference-4j on Kubernetes
 
 # A chart can be either an 'application' or a 'library' chart.
 #

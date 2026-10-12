@@ -40,7 +40,7 @@ public class JsonSupport {
 
     public static String toJson(Object o) {
         try {
-            return om.writer(JlamaPrettyPrinter.INSTANCE).writeValueAsString(o);
+            return om.writer(Bi4jPrettyPrinter.INSTANCE).writeValueAsString(o);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -86,16 +86,16 @@ public class JsonSupport {
         return jsons;
     }
 
-    public static class JlamaPrettyPrinter extends DefaultPrettyPrinter {
+    public static class Bi4jPrettyPrinter extends DefaultPrettyPrinter {
 
-        public static final JlamaPrettyPrinter INSTANCE = new JlamaPrettyPrinter();
+        public static final Bi4jPrettyPrinter INSTANCE = new Bi4jPrettyPrinter();
 
         @Override
         public DefaultPrettyPrinter createInstance() {
             return INSTANCE;
         }
 
-        private JlamaPrettyPrinter() {
+        private Bi4jPrettyPrinter() {
             _objectIndenter = FixedSpaceIndenter.instance;
             _spacesInObjectEntries = false;
         }

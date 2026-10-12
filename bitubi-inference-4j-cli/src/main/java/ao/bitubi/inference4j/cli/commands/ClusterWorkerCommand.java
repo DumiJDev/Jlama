@@ -15,6 +15,7 @@
  */
 package ao.bitubi.inference4j.cli.commands;
 
+import ao.bitubi.inference4j.util.Bi4jProperties;
 import ao.bitubi.inference4j.net.Worker;
 
 import java.nio.file.Path;
@@ -27,7 +28,7 @@ import picocli.CommandLine;
 @CommandLine.Command(name = "cluster-worker", description = "Connects to a cluster coordinator to perform distributed inference", abbreviateSynopsis = true)
 public class ClusterWorkerCommand extends BaseCommand {
 
-    private static final Boolean useHostnameAsWorkerId = Boolean.getBoolean("jlama.use_hostname_as_workerid");
+    private static final Boolean useHostnameAsWorkerId = Bi4jProperties.getBoolean("use_hostname_as_workerid");
     private static final String HOSTNAME = System.getenv("HOSTNAME");
 
     @CommandLine.Option(names = { "--coordinator" }, paramLabel = "ARG", description = "hostname/ip of coordinator", required = true)

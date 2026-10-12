@@ -43,7 +43,7 @@ public enum DType {
     // U64 represents a 64-bit unsigned integer type.
     U64(8),
 
-    // JLAMA specific types
+    // bitubi-inference-4j specific types
     // Q4 represents a 4-bit quantized type.
     Q4(1),
     // Q5 represents a 5-bit quantized type.

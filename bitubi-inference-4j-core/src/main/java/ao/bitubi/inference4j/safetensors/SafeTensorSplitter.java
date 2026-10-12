@@ -76,7 +76,7 @@ public class SafeTensorSplitter {
 
                 Pair<RandomAccessFile, FileChannel> chunkFile = chunkFiles.computeIfAbsent(chunkName, n -> {
                     try {
-                        File tmp = File.createTempFile("jlama", "chunk");
+                        File tmp = File.createTempFile("bi4j", "chunk");
                         tmp.deleteOnExit();
                         RandomAccessFile r = new RandomAccessFile(tmp, "rw");
                         FileChannel ch = r.getChannel();

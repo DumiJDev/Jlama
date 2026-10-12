@@ -1,6 +1,6 @@
 # bitubi-inference-4j
 
-Motor de inferência de LLMs em Java, fork mantido do [Jlama](https://github.com/tjake/jlama)
+Motor de inferência de LLMs em Java (comando da CLI e harness de agentes: `bi4j`), fork mantido do [Jlama](https://github.com/tjake/jlama)
 (Apache 2.0) pela Bitubi Solutions. Modelo de negócio: open core (núcleo aberto, extras enterprise
 num repositório separado que depende do aberto via SPI, nunca o contrário).
 
@@ -16,7 +16,7 @@ Spec e plano: `docs/superpowers/specs/` e `docs/superpowers/plans/`. Ordem dos s
 - JDK 25 é o mínimo e único alvo de build, teste e execução. Bytecode fica em 21 até o upgrade do
   Spring (o Spring Boot 3.3 não lê classes versão 69).
 - **Panama (Vector API) é a implementação padrão.** O backend nativo é opt-in com
-  `-Djlama.use_native_tensor_operations=true`; no JDK 25 ele deu resposta errada no teste de fumaça.
+  `-Dbi4j.use_native_tensor_operations=true`; no JDK 25 ele deu resposta errada no teste de fumaça.
 - Fase de fundação: nenhuma mudança de comportamento do motor.
 - Ações visíveis externamente (push, renomear repositório, publicar pacotes) só com autorização.
 

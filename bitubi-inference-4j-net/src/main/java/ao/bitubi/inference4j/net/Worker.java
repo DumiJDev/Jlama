@@ -19,7 +19,7 @@ import static ao.bitubi.inference4j.model.ModelSupport.loadModel;
 
 import ao.bitubi.inference4j.model.AbstractModel;
 import ao.bitubi.inference4j.model.DistributedContext;
-import ao.bitubi.inference4j.net.grpc.JlamaRingWorkerService;
+import ao.bitubi.inference4j.net.grpc.Bi4jRingWorkerService;
 import ao.bitubi.inference4j.safetensors.DType;
 import ao.bitubi.inference4j.safetensors.HTTPSafeTensorLoader;
 import ao.bitubi.inference4j.safetensors.SafeTensorSupport;
@@ -65,19 +65,19 @@ public class Worker implements Closeable {
     private final KvBufferCache kvBufferCache;
     private final ByteString workerIdBytes;
     public final AbstractModel model;
-    private final JlamaServiceGrpc.JlamaServiceStub client;
-    private final JlamaServiceGrpc.JlamaServiceBlockingStub blockingClient;
+    private final Bi4jServiceGrpc.Bi4jServiceStub client;
+    private final Bi4jServiceGrpc.Bi4jServiceBlockingStub blockingClient;
     private final RegisterResponse registerResponse;
 
     public final PeerInfo peerInfo;
-    private final JlamaWorkerRingGrpc.JlamaWorkerRingStub peerClient;
+    private final Bi4jWorkerRingGrpc.Bi4jWorkerRingStub peerClient;
     private final StreamObserver<PassRecord> peerStream;
 
     private volatile StreamObserver<GenerateRequest> outputStream;
     private final ConcurrentMap<UUID, CombineObserver> combineStreams;
 
     private final Server peerServer;
-    private final JlamaRingWorkerService peerService;
+    private final Bi4jRingWorkerService peerService;
 
     public Worker(
         File modelPath,
@@ -101,7 +101,7 @@ public class Worker implements Closeable {
             .build();
 
         // Start the ring service
-        this.peerService = new JlamaRingWorkerService(this);
+        this.peerService = new Bi4jRingWorkerService(this);
         this.peerServer = ServerBuilder.forPort(peerPort).addService(peerService).maxInboundMessageSize(MESSAGE_SIZE).build();
         try {
             this.peerServer.start();
@@ -111,8 +111,8 @@ public class Worker implements Closeable {
 
         // Setup via coordinator
         this.workerId = optionalWorkerId.map(s -> new UUID(s.hashCode(), s.hashCode())).orElse(UUID.randomUUID());
-        this.client = JlamaServiceGrpc.newStub(channel).withMaxInboundMessageSize(MESSAGE_SIZE).withMaxOutboundMessageSize(MESSAGE_SIZE);
-        this.blockingClient = JlamaServiceGrpc.newBlockingStub(channel)
+        this.client = Bi4jServiceGrpc.newStub(channel).withMaxInboundMessageSize(MESSAGE_SIZE).withMaxOutboundMessageSize(MESSAGE_SIZE);
+        this.blockingClient = Bi4jServiceGrpc.newBlockingStub(channel)
             .withMaxInboundMessageSize(MESSAGE_SIZE)
             .withMaxOutboundMessageSize(MESSAGE_SIZE);
         this.workerIdBytes = ByteString.copyFrom(
@@ -136,7 +136,7 @@ public class Worker implements Closeable {
         this.peerInfo = registerResponse.getNumLayerShards() == 1 ? null : blockingClient.discover(rr);
         this.peerClient = peerInfo == null || peerInfo.getIsCoordinator()
             ? null
-            : JlamaWorkerRingGrpc.newStub(
+            : Bi4jWorkerRingGrpc.newStub(
                 ManagedChannelBuilder.forAddress(peerInfo.getHostname(), peerInfo.getPeerPort()).usePlaintext().build()
             );
         this.peerStream = peerInfo == null || peerInfo.getIsCoordinator() ? null : peerClient.pass(new StreamObserver<>() {

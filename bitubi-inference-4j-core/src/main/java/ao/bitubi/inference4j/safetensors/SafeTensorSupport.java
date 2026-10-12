@@ -289,7 +289,7 @@ public class SafeTensorSupport {
         Files.copy(modelRoot.resolve("README.md"), qPath.resolve("README.md"));
 
         // Copy README.md and add jlama header
-        addJlamaHeader(baseDirName, qPath.resolve("README.md"));
+        addBi4jHeader(baseDirName, qPath.resolve("README.md"));
 
         if (Files.exists(modelRoot.resolve("tokenizer_config.json"))) Files.copy(
             modelRoot.resolve("tokenizer_config.json"),
@@ -324,14 +324,14 @@ public class SafeTensorSupport {
         return qPath;
     }
 
-    private static void addJlamaHeader(String modelName, Path readmePath) throws IOException {
+    private static void addBi4jHeader(String modelName, Path readmePath) throws IOException {
         String cleanName = modelName.replaceAll("_", "/");
         String header = String.format(
             "# Quantized Version of %s \n\n"
-                + "This model is a quantized variant of the %s model, optimized for use with Jlama, a Java-based inference engine. "
+                + "This model is a quantized variant of the %s model, optimized for use with bitubi-inference-4j, a Java-based inference engine derived from Jlama. "
                 + "The quantization process reduces the model's size and improves inference speed, while maintaining high accuracy "
                 + "for efficient deployment in production environments.\n\n"
-                + "For more information on Jlama, visit the [Jlama GitHub repository](https://github.com/tjake/jlama).\n\n"
+                + "For more information, visit the [bitubi-inference-4j GitHub repository](https://github.com/bitubi-solutions/bitubi-inference-4j).\n\n"
                 + "---\n\n",
             cleanName,
             cleanName

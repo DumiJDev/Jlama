@@ -24,7 +24,7 @@ import ao.bitubi.inference4j.model.ModelSupport;
 import ao.bitubi.inference4j.model.TransformerBlock;
 import ao.bitubi.inference4j.model.functions.EmbedInput;
 import ao.bitubi.inference4j.model.functions.SampleOutput;
-import ao.bitubi.inference4j.net.grpc.JlamaService;
+import ao.bitubi.inference4j.net.grpc.Bi4jService;
 import ao.bitubi.inference4j.safetensors.Config;
 import ao.bitubi.inference4j.safetensors.DType;
 import ao.bitubi.inference4j.safetensors.TensorInfo;
@@ -43,9 +43,9 @@ import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class JlamaServiceTest {
-    JlamaServiceGrpc.JlamaServiceBlockingStub blockingStub;
-    JlamaServiceGrpc.JlamaServiceStub stub;
+public class Bi4jServiceTest {
+    Bi4jServiceGrpc.Bi4jServiceBlockingStub blockingStub;
+    Bi4jServiceGrpc.Bi4jServiceStub stub;
 
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
@@ -60,16 +60,16 @@ public class JlamaServiceTest {
         grpcCleanup.register(
             InProcessServerBuilder.forName(serverName)
                 .directExecutor()
-                .addService(new JlamaService(new MockModel(modelConfig), 4, true, false))
+                .addService(new Bi4jService(new MockModel(modelConfig), 4, true, false))
                 .build()
                 .start()
         );
 
-        blockingStub = JlamaServiceGrpc.newBlockingStub(
+        blockingStub = Bi4jServiceGrpc.newBlockingStub(
             grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
         );
 
-        stub = JlamaServiceGrpc.newStub(grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+        stub = Bi4jServiceGrpc.newStub(grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
     }
 
     @Test
