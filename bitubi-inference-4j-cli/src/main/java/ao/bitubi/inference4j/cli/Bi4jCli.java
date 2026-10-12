@@ -31,7 +31,7 @@ import static java.util.Arrays.asList;
 import static picocli.CommandLine.Help.Column.Overflow.*;
 import static picocli.CommandLine.Model.UsageMessageSpec.*;
 
-@Command(name = "bi4j", sortOptions = false, headerHeading = "Usage:%n", synopsisHeading = "%n", descriptionHeading = "%nDescription:%n%n", parameterListHeading = "%nParameters:%n", optionListHeading = "%nCommand Options:%n", mixinStandardHelpOptions = true, usageHelpAutoWidth = true, requiredOptionMarker = '*', description = "Jlama is a modern LLM inference engine for Java!\nQuantized models are maintained at https://hf.co/tjake\n\nChoose from the available commands:", defaultValueProvider = PropertiesDefaultProvider.class)
+@Command(name = "bi4j", sortOptions = false, headerHeading = "Usage:%n", synopsisHeading = "%n", descriptionHeading = "%nDescription:%n%n", parameterListHeading = "%nParameters:%n", optionListHeading = "%nCommand Options:%n", mixinStandardHelpOptions = true, usageHelpAutoWidth = true, requiredOptionMarker = '*', description = "bitubi-inference-4j is a modern LLM inference engine for Java!\nQuantized models are maintained at https://hf.co/tjake\n\nChoose from the available commands:", defaultValueProvider = PropertiesDefaultProvider.class)
 public class Bi4jCli implements Runnable {
     static {
         setupLogging();

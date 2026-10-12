@@ -50,7 +50,7 @@ FROM openjdk:21-slim
 RUN apt-get update
 RUN apt-get install -y procps curl gzip
 
-LABEL org.opencontainers.image.source=https://github.com/tjake/Jlama
+LABEL org.opencontainers.image.source=https://github.com/bitubi-solutions/bitubi-inference-4j
 RUN mkdir -p /profiler && curl -s -L https://github.com/async-profiler/async-profiler/releases/download/v3.0/async-profiler-3.0-linux-x64.tar.gz | tar zxvf - -C /profiler
 
 COPY inlinerules.json inlinerules.json

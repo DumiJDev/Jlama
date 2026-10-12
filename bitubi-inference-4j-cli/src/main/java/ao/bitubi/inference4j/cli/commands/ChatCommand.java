@@ -119,7 +119,7 @@ public class ChatCommand extends ModelBaseCommand {
         BiConsumer<String, Float> outCallback;
 
         out = System.console().writer();
-        out.print(chatText.format("Jlama: "));
+        out.print(chatText.format("bi4j: "));
         out.flush();
         outCallback = (w, t) -> {
             out.print(chatText.format(w));

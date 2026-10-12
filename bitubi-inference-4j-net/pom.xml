@@ -10,7 +10,7 @@
         <version>${revision}</version>
     </parent>
     <artifactId>bitubi-inference-4j-net</artifactId>
-    <name>Jlama Net</name>
+    <name>bitubi-inference-4j Net</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

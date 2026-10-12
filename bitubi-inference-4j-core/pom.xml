@@ -10,7 +10,7 @@
         <version>${revision}</version>
     </parent>
     <artifactId>bitubi-inference-4j-core</artifactId>
-    <name>Jlama Core</name>
+    <name>bitubi-inference-4j Core</name>
 
     <dependencies>
         <dependency>

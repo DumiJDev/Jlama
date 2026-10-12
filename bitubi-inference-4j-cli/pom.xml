@@ -10,7 +10,7 @@
     <version>${revision}</version>
   </parent>
   <artifactId>bitubi-inference-4j-cli</artifactId>
-  <name>Jlama Cli</name>
+  <name>bitubi-inference-4j Cli</name>
 
   <properties>
     <resteasy.version>3.15.6.Final</resteasy.version>

@@ -1,156 +1,108 @@
-# 🦙 Jlama: A modern LLM inference engine for Java
-
 <p align="center">
-  <img src="docs/jlama.jpg" width="300" height="300" alt="Cute Jlama">
+  <img src="docs/logo.svg" width="160" height="160" alt="bitubi-inference-4j">
 </p>
 
-[![Maven Central Version](https://img.shields.io/maven-central/v/com.github.tjake/jlama-parent?style=flat-square)](https://central.sonatype.com/artifact/com.github.tjake/jlama-core/overview)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Discord](https://img.shields.io/discord/1279855254812229642?style=flat-square&label=Discord&color=663399)](https://discord.gg/HsYXHrMu6J)
+# bitubi-inference-4j
 
+Motor de inferência de LLMs para Java, mantido pela [Bitubi Solutions](https://github.com/bitubi-solutions).
+Roda modelos diretamente na JVM, usando a [Vector API](https://openjdk.org/jeps/529) (Panama) para
+acelerar a CPU, e expõe uma CLI, uma API compatível com OpenAI e inferência distribuída.
 
-## 🚀 Features
+> **Origem.** Este projeto é um fork mantido do [Jlama](https://github.com/tjake/jlama)
+> (© T Jake Luciani e colaboradores, Apache 2.0). Veja o arquivo [`NOTICE`](./NOTICE).
 
-Model Support:
-  * Gemma & Gemma 2 Models
-  * Llama & Llama2 & Llama3 Models
-  * Mistral & Mixtral Models
-  * Qwen2 Models
-  * IBM Granite Models
-  * GPT-2 Models
-  * BERT Models
-  * BPE Tokenizers
-  * WordPiece Tokenizers
+## Funcionalidades
 
-Implements:
-  * Paged Attention
+Modelos:
+  * Gemma e Gemma 2
+  * Llama, Llama 2 e Llama 3
+  * Mistral e Mixtral
+  * Qwen2
+  * IBM Granite
+  * GPT-2
+  * BERT
+  * Tokenizers BPE e WordPiece
+
+Implementa:
+  * Paged attention
   * Mixture of Experts
-  * Tool Calling
-  * Generate Embeddings
-  * Classifier Support
-  * Huggingface [SafeTensors](https://github.com/huggingface/safetensors) model and tokenizer format
-  * Support for F32, F16, BF16 types
-  * Support for Q8, Q4 model quantization
-  * Fast GEMM operations
-  * Distributed Inference!
+  * Tool calling
+  * Embeddings
+  * Classificadores
+  * Modelos e tokenizers no formato [SafeTensors](https://github.com/huggingface/safetensors) do Hugging Face
+  * Tipos F32, F16 e BF16
+  * Quantização Q8 e Q4
+  * GEMM rápido (Panama / Vector API por padrão)
+  * Inferência distribuída
 
-Jlama requires Java 20 or later and utilizes the new [Vector API](https://openjdk.org/jeps/448) 
-for faster inference.
+Requer **JDK 25 ou superior** (a Vector API ainda é um módulo em incubação: `--add-modules jdk.incubator.vector`).
+Só o JDK 25 é testado; versões mais novas podem alterar a Vector API.
 
-## 🤔 What is it used for? 
+Implementação de tensores: o padrão é Panama. O backend nativo é opcional e está desativado por padrão
+(`-Djlama.use_native_tensor_operations=true` para ativar); no JDK 25 ele ainda produz resultados incorretos.
 
-Add LLM Inference directly to your Java application.
+## Início rápido
 
-## 🔬 Quick Start
-
-### 🕵️‍♀️ How to use as a local client (with jbang!)
-Jlama includes a command line tool that makes it easy to use.
-
-The CLI can be run with [jbang](https://www.jbang.dev/download/).
+Compile e rode a CLI (comando `bi4j`):
 
 ```shell
-#Install jbang (or https://www.jbang.dev/download/)
-curl -Ls https://sh.jbang.dev | bash -s - app setup
-
-#Install Jlama CLI (will ask if you trust the source)
-jbang app install --force jlama@tjake
+export JAVA_HOME=/caminho/para/jdk-25
+./mvnw -B clean package -DskipTests
+./run-cli.sh restapi tjake/Llama-3.2-1B-Instruct-JQ4 --auto-download
 ```
 
-Now that you have jlama installed you can download a model from huggingface and chat with it.
-Note I have pre-quantized models available at https://hf.co/tjake
+Abra http://localhost:8080/ no navegador.
 
-```shell
-# Run the openai chat api and UI on a model
-jlama restapi tjake/Llama-3.2-1B-Instruct-JQ4 --auto-download
+```
+Uso:
+
+bi4j [COMANDO]
+
+Inferência:
+  chat                 Conversa com o modelo
+  restapi              API REST compatível com OpenAI
+  complete             Completa um prompt
+
+Inferência distribuída:
+  cluster-coordinator  API REST distribuída usando workers
+  cluster-worker       Conecta a um coordinator para inferência distribuída
+
+Outros:
+  download             Baixa um modelo do Hugging Face (formato dono/nome)
+  list                 Lista modelos locais
+  quantize             Quantiza um modelo
 ```
 
-open browser to http://localhost:8080/
+Há modelos pré-quantizados em https://hf.co/tjake.
 
-<p align="center">
-  <img src="docs/demo.png" alt="Demo chat">
-</p>
+## Usar em um projeto Java
 
-
-```shell
-Usage:
-
-jlama [COMMAND]
-
-Description:
-
-Jlama is a modern LLM inference engine for Java!
-Quantized models are maintained at https://hf.co/tjake
-
-Choose from the available commands:
-
-Inference:
-  chat                 Interact with the specified model
-  restapi              Starts a openai compatible rest api for interacting with this model
-  complete             Completes a prompt using the specified model
-
-Distributed Inference:
-  cluster-coordinator  Starts a distributed rest api for a model using cluster workers
-  cluster-worker       Connects to a cluster coordinator to perform distributed inference
-
-Other:
-  download             Downloads a HuggingFace model - use owner/name format
-  list                 Lists local models
-  quantize             Quantize the specified model
-```
-
-
-### 👨‍💻 How to use in your Java project
-The main purpose of Jlama is to provide a simple way to use large language models in Java.
-
-The simplest way to embed Jlama in your app is with the [Langchain4j Integration](https://github.com/langchain4j/langchain4j-examples/tree/main/jlama-examples).  
-
-If you would like to embed Jlama without langchain4j, add the following [maven](https://central.sonatype.com/artifact/com.github.tjake/jlama-core/) dependencies to your project:
+Os artefatos usam o `groupId` `ao.bitubi`. A publicação começa no GitHub Packages
+(`https://maven.pkg.github.com/bitubi-solutions/bitubi-inference-4j`), que exige um token com `read:packages`.
 
 ```xml
-
 <dependency>
-  <groupId>com.github.tjake</groupId>
-  <artifactId>jlama-core</artifactId>
-  <version>${jlama.version}</version>
+  <groupId>ao.bitubi</groupId>
+  <artifactId>bitubi-inference-4j-core</artifactId>
+  <version>${bitubi-inference-4j.version}</version>
 </dependency>
-
-<dependency>
-  <groupId>com.github.tjake</groupId>
-  <artifactId>jlama-native</artifactId>
-  <!-- supports linux-x86_64, macos-x86_64/aarch_64, windows-x86_64 
-       Use https://github.com/trustin/os-maven-plugin to detect os and arch -->
-  <classifier>${os.detected.name}-${os.detected.arch}</classifier>
-  <version>${jlama.version}</version>
-</dependency>
-
 ```
 
-jlama uses Java 21 preview features. You can enable the features globally with:
-
-```shell
-export JDK_JAVA_OPTIONS="--add-modules jdk.incubator.vector --enable-preview"
-```
-or enable the preview features by configuring maven compiler and failsafe plugins.
-
-
-
-Then you can use the Model classes to run models:
+Ative a Vector API na JVM: `--add-modules jdk.incubator.vector --enable-preview`.
 
 ```java
- public void sample() throws IOException {
+public void sample() throws IOException {
     String model = "tjake/Llama-3.2-1B-Instruct-JQ4";
     String workingDirectory = "./models";
-
     String prompt = "What is the best season to plant avocados?";
 
-    // Downloads the model or just returns the local path if it's already downloaded
-    File localModelPath = new Downloader(workingDirectory, model).huggingFaceModel();
-    
-    // Loads the quantized model and specified use of quantized memory
+    // Baixa o modelo, ou devolve o caminho local se já estiver baixado
+    File localModelPath = SafeTensorSupport.maybeDownloadModel(workingDirectory, model);
+
+    // Carrega o modelo quantizado
     AbstractModel m = ModelSupport.loadModel(localModelPath, DType.F32, DType.I8);
 
     PromptContext ctx;
-    // Checks if the model supports chat prompting and adds prompt in the expected format for this model
     if (m.promptSupport().isPresent()) {
         ctx = m.promptSupport()
                 .get()
@@ -162,77 +114,39 @@ Then you can use the Model classes to run models:
         ctx = PromptContext.of(prompt);
     }
 
-    System.out.println("Prompt: " + ctx.getPrompt() + "\n");
-    // Generates a response to the prompt and prints it
-    // The api allows for streaming or non-streaming responses
-    // The response is generated with a temperature of 0.7 and a max token length of 256
+    // O quarto argumento é o limite total de tokens (prompt incluído)
     Generator.Response r = m.generate(UUID.randomUUID(), ctx, 0.0f, 256, (s, f) -> {});
     System.out.println(r.responseText);
- }
+}
 ```
 
-Or you can use a **Builder API**:
+Ou com a **Builder API**:
 
 ```java
- public void sample() throws IOException {
-    String model = "tjake/Llama-3.2-1B-Instruct-JQ4";
-    String workingDirectory = "./models";
-
-    String prompt = "What is the best season to plant avocados?";
-
-    // Downloads the model or just returns the local path if it's already downloaded
-    File localModelPath = new Downloader(workingDirectory, model).huggingFaceModel();
-    
-    // Loads the quantized model and specified use of quantized memory
-    AbstractModel m = ModelSupport.loadModel(localModelPath, DType.F32, DType.I8);
-
-    PromptContext ctx;
-    // Checks if the model supports chat prompting and adds prompt in the expected format for this model
-    if (m.promptSupport().isPresent()) {
-        ctx = m.promptSupport()
-                .get()
-                .builder()
-                .addSystemMessage("You are a helpful chatbot who writes short responses.")
-                .addUserMessage(prompt)
-                .build();
-    } else {
-        ctx = PromptContext.of(prompt);
-    }
-
-    System.out.println("Prompt: " + ctx.getPrompt() + "\n");
-    // Generates a response to the prompt and prints it
-    // The api allows for streaming or non-streaming responses
-    // The response is generated with a temperature of 0.7 and a max token length of 256
-    Generator.Response r = m.generateBuilder()
-            .session(UUID.randomUUID()) //By default, UUID.randomUUID()
-            .promptContext(ctx) // Required or use prompt(String text)
-            .ntokens(256) //By default, 256
-            .temperature(0.0f) //By default, 0.0f
-            .onTokenWithTimings((s, aFloat) -> {}) //By default, (s, aFloat) -> {}, nothing
-            .generate();
-    
-    System.out.println(r.responseText);
- }
+Generator.Response r = m.generateBuilder()
+        .session(UUID.randomUUID())            // por padrão, UUID.randomUUID()
+        .promptContext(ctx)                    // obrigatório, ou prompt(String text)
+        .ntokens(256)                          // por padrão, 256
+        .temperature(0.0f)                     // por padrão, 0.0f
+        .onTokenWithTimings((s, t) -> {})      // por padrão, não faz nada
+        .generate();
 ```
 
-## ⭐ Give us a Star! 
+## Roteiro
 
-If you like or are using this project to build your own, please give us a star. It's a free way to show your support.
+* Suporte a GGUF e a mais modelos, com foco em hardware antigo
+* API Anthropic e melhorias na API OpenAI
+* UI com htmx + JTE sobre Spring Boot 4
+* Coordinator/worker pronto para a cloud
+* Backend de GPU opcional via WebGPU (em avaliação)
+* Harness de agentes na CLI
 
-## 🗺️ Roadmap
+## Licença e origem
 
-* Support more and more models
-* <s>Add pure java tokenizers</s>
-* <s>Support Quantization (e.g. k-quantization)</s>
-* Add LoRA support
-* GraalVM support
-* <s>Add distributed inference</s>
+O código está sob a [Apache License 2.0](./LICENSE). Contribuições seguem o
+[guia de contribuição](./CONTRIBUTING.md) (commits assinados, DCO).
 
-## 🏷️ License and Citation
-
-The code is available under [Apache License](./LICENSE).
-
-If you find this project helpful in your research, please cite this work at
+Se este trabalho for útil na sua pesquisa, cite o projeto original:
 
 ```
 @misc{jlama2024,

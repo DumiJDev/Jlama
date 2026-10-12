@@ -11,7 +11,7 @@ serviceAccount:
   name: ""
 
 image:
-  repository: docker.io/tjake/jlama
+  repository: ghcr.io/bitubi-solutions/bitubi-inference-4j
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
