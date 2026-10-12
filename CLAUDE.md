@@ -18,6 +18,12 @@ Spec e plano: `docs/superpowers/specs/` e `docs/superpowers/plans/`. Ordem dos s
 - **Panama (Vector API) é a implementação padrão.** O backend nativo é opt-in com
   `-Dbi4j.use_native_tensor_operations=true`; no JDK 25 ele deu resposta errada no teste de fumaça.
 - Fase de fundação: nenhuma mudança de comportamento do motor.
+- **DX é requisito do produto inteiro** (SDK, API, UI, CLI, harness, deploy, docs). Cada componente tem
+  revisão própria quando chegar a sua vez; por enquanto só a intenção está registada em
+  `docs/superpowers/specs/2026-10-12-dx-product-wide-intent.md`. Não desenhe nem implemente DX de um
+  componente sem essa revisão.
+- A **release é manual e feita pelo autor** (workflow `Release` por `workflow_dispatch`). Nunca dispare
+  releases, tags de versão nem publicações de pacotes.
 - Ações visíveis externamente (push, renomear repositório, publicar pacotes) só com autorização.
 
 ## Build e testes
