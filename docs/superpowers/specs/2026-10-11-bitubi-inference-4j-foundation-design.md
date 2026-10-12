@@ -1,16 +1,16 @@
-# aby-inference: visão geral e fundação (sub-projeto 0)
+# bitubi-inference-4j: visão geral e fundação (sub-projeto 0)
 
 Data: 2026-10-11. Estado: aguardando revisão do autor.
 
 ## 1. Intenção
 
-Continuar o Jlama (motor de inferência de LLMs em Java, upstream `tjake/jlama`, parado pelo dono) como um produto novo, **aby-inference**, mantido pela organização `bitubi-solutions`.
+Continuar o Jlama (motor de inferência de LLMs em Java, upstream `tjake/jlama`, parado pelo dono) como um produto novo, **bitubi-inference-4j**, mantido pela organização `bitubi-solutions`.
 
 - **Identidade:** rebrand com nome novo, creditando o Jlama original (Apache 2.0).
 - **Modelo de negócio:** open core. Núcleo aberto (motor, SDK, servidor, cluster básico) em Apache 2.0. Extras enterprise pagos (operador Kubernetes, multi-tenant, SSO, cotas, auditoria, hospedagem, suporte) em repositório separado que depende do aberto via SPI, nunca o contrário.
 - **Critério de sucesso global:** um motor Java competitivo em hardware antigo, utilizável como SDK, servidor self-hosted (APIs OpenAI e Anthropic) e cluster que justifique migrar para a cloud.
 
-Premissas (do autor): `groupId` `ao.bitubi.aby-inference`, CLI `aby`, repositório migrado para `bitubi-solutions`.
+Premissas (do autor): `groupId` `ao.bitubi`, CLI `bi4j`, repositório migrado para `bitubi-solutions`.
 
 ## 2. Decomposição em sub-projetos
 
@@ -23,7 +23,7 @@ Cada um tem seu próprio ciclo spec, plano e implementação.
 | 1b | Backend de GPU via WebGPU (spike primeiro) | 1 |
 | 2 | Servidor e UI: API OpenAI melhorada, API Anthropic, htmx + JTE sobre Spring Boot 4 | 1 |
 | 3 | Cluster para cloud: coordinator/worker evoluído (HA, autoscaling, descoberta de workers) | 2 |
-| 4 | Harness de agentes `aby` (tipo Claude Code), **por último**, após estabilizar o motor | 2 |
+| 4 | Harness de agentes `bi4j` (tipo Claude Code), **por último**, após estabilizar o motor | 2 |
 
 Este spec detalha só o sub-projeto 0. Os demais têm intenção e restrições registradas abaixo, mas serão especificados quando chegar a vez.
 
@@ -45,13 +45,13 @@ Estado atual verificado: branch `main`, `origin` em `DumiJDev/Jlama`. O `git sta
 1. **Normalizar fim de linha.** Adicionar `.gitattributes` (`* text=auto eol=lf`) e renormalizar.
 2. **Migrar para `bitubi-solutions`.** Transferir ou recriar o repositório na organização, mantendo o histórico (preserva a autoria original) e adicionando `upstream` apontando para `tjake/jlama`.
 3. **Rename mecânico, num commit, sem mudança de comportamento:**
-   - Pacote `com.github.tjake.jlama` para `ao.bitubi.aby.inference` (o hífen não é válido em pacote Java).
-   - `groupId` `ao.bitubi.aby-inference`; `artifactId`s `aby-inference-core`, `-native`, `-net`, `-cli`, `-tests`, `-parent`.
-   - CLI `aby` (`run-cli.sh`, `run-cli.bat`, jbang, Dockerfile, compose, kubernetes).
+   - Pacote `com.github.tjake.jlama` para `ao.bitubi.inference4j` (o hífen não é válido em pacote Java).
+   - `groupId` `ao.bitubi`; `artifactId`s `bitubi-inference-4j-core`, `-native`, `-net`, `-cli`, `-tests`, `-parent`.
+   - CLI `bi4j` (`run-cli.sh`, `run-cli.bat`, jbang, Dockerfile, compose, kubernetes).
    - `<revision>` reinicia em `0.1.0-SNAPSHOT`.
 4. **Atribuição (Apache 2.0).** `NOTICE` ("Este produto inclui software derivado do Jlama, © Tim Jake e colaboradores"), seção "Origem" no README, cabeçalhos de copyright originais preservados, arquivos modificados marcados, `conf/license-header` atualizado. Não usar o nome ou a marca do autor original para sugerir endosso.
 5. **Build e CI.** JDK 25 como mínimo e único alvo; CI em Linux, Windows e macOS (ARM e Intel); remover os perfis e fontes de JDK 20/21/22 (`jlama-native/src/main/java22` vira `java25`); workflow de release para o GitHub Packages.
-6. **Publicação.** Por decisão do autor, começa no GitHub Packages (`maven.pkg.github.com/bitubi-solutions/aby-inference`); o Maven Central fica para depois (exige verificar o domínio `bitubi.ao`, ou usar `io.github.bitubi-solutions`).
+6. **Publicação.** Por decisão do autor, começa no GitHub Packages (`maven.pkg.github.com/bitubi-solutions/bitubi-inference-4j`); o Maven Central fica para depois (exige verificar o domínio `bitubi.ao`, ou usar `io.github.bitubi-solutions`).
 7. **Governança mínima.** `CONTRIBUTING`, DCO ou CLA (necessário antes de aceitar PR externo, para preservar a opção comercial), templates de issue.
 
 ### 3.2 Critério de pronto
@@ -76,3 +76,11 @@ Os testes existentes passam sem alteração de lógica; mais o teste de fumaça 
 ## 4. Fora de escopo deste spec
 
 Qualquer implementação dos sub-projetos 1 a 4 e do lado pago. Cada um terá seu spec.
+
+## 5. Decisões posteriores (2026-10-11 e 2026-10-12)
+
+- **Nome do produto:** `bitubi-inference-4j` (substitui `aby-inference`). `groupId` `ao.bitubi`, pacote Java `ao.bitubi.inference4j`, artefatos `bitubi-inference-4j-{parent,core,native,net,cli,tests}`, comando da CLI `bi4j`. O nome `aby` fica reservado ao harness de agentes, se for mantido.
+- **Panama por padrão no JDK 25.** O backend nativo (`jlama-native`) deu resposta errada no teste de fumaça no JDK 25 ("I'm sorry, but I can't assist with that." contra "The capital of France is Paris." com Panama). Passou a ser opt-in com `-Djlama.use_native_tensor_operations=true`. A causa do defeito nativo não foi investigada.
+- **Bytecode 21 com JDK 25 como único JDK.** O Spring Boot 3.3.x não lê classes versão 69; o alvo sobe para 25 junto com o upgrade do Spring (sub-projeto 2).
+- **Equipa de agentes** em `.claude/agents/` (motor, formatos, servidor, cluster, build, QA, GPU, marca, harness) e regras do projeto em `CLAUDE.md`. Regra do autor: nunca adicionar trailers do Claude em commits ou PRs.
+- **Baseline de desempenho** (Intel Core Ultra 7 255H, WSL2, JDK 25, Panama): `docs/benchmarks/baseline-intel-core-ultra-7-255h.md`.

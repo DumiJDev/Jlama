@@ -1,20 +1,20 @@
-# aby-inference Fundação (sub-projeto 0) Implementation Plan
+# bitubi-inference-4j Fundação (sub-projeto 0) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Transformar o fork do Jlama no `aby-inference` (rename, atribuição, build em JDK 25, CI em Linux, Windows e macOS, publicação), sem mudar comportamento.
+**Goal:** Transformar o fork do Jlama no `bitubi-inference-4j` (rename, atribuição, build em JDK 25, CI em Linux, Windows e macOS, publicação), sem mudar comportamento.
 
 **Architecture:** Mudanças mecânicas em commits pequenos e revisáveis. Primeiro limpar o ruído de fim de linha, depois fazer o build funcionar em JDK 25 (baseline), só então renomear, para que uma quebra de rename seja distinguível de uma quebra de build. Um teste de fumaça com modelo real prova que o motor e o código nativo continuam funcionando.
 
 **Tech Stack:** Java 25 (mínimo), Maven (wrapper), JUnit 4, GitHub Actions, GitHub Packages.
 
-**Spec:** `docs/superpowers/specs/2026-10-11-aby-inference-foundation-design.md`
+**Spec:** `docs/superpowers/specs/2026-10-11-bitubi-inference-4j-foundation-design.md`
 
 ## Global Constraints
 
-- Pacote Java: `ao.bitubi.aby.inference` (o hífen não é válido em pacote).
-- `groupId`: `ao.bitubi.aby-inference`; `artifactId`s: `aby-inference-parent`, `aby-inference-core`, `aby-inference-native`, `aby-inference-net`, `aby-inference-cli`, `aby-inference-tests`.
-- CLI: comando `aby`; classe principal `ao.bitubi.aby.inference.cli.AbyCli` (hoje `JlamaCli`).
+- Pacote Java: `ao.bitubi.inference4j` (o hífen não é válido em pacote).
+- `groupId`: `ao.bitubi`; `artifactId`s: `bitubi-inference-4j-parent`, `bitubi-inference-4j-core`, `bitubi-inference-4j-native`, `bitubi-inference-4j-net`, `bitubi-inference-4j-cli`, `bitubi-inference-4j-tests`.
+- CLI: comando `bi4j`; classe principal `ao.bitubi.inference4j.cli.Bi4jCli` (hoje `JlamaCli`).
 - Versão: `<revision>` = `0.1.0-SNAPSHOT`.
 - JDK mínimo e único alvo: 25 (LTS). JDK 20, 21 e 22 deixam de ser suportados. A CI roda em Linux, Windows e macOS, sempre com JDK 25.
 - Atribuição Apache 2.0: manter `LICENSE`; criar `NOTICE`; preservar cabeçalhos de copyright originais; marcar arquivos modificados; não usar nome/marca do autor original para sugerir endosso.
@@ -396,13 +396,13 @@ git commit -m "test: baseline de desempenho (tokens/s) antes do rename
 ### Task 4: Rename mecânico (pacote, groupId, artefatos, CLI)
 
 **Files:**
-- Move: todos os diretórios `.../com/github/tjake/jlama/` para `.../ao/bitubi/aby/inference/` (em `jlama-core`, `jlama-native` (`java/`, `java25/`), `jlama-net`, `jlama-cli`, `jlama-tests`)
+- Move: todos os diretórios `.../com/github/tjake/jlama/` para `.../ao/bitubi/inference4j/` (em `jlama-core`, `jlama-native` (`java/`, `java25/`), `jlama-net`, `jlama-cli`, `jlama-tests`)
 - Modify: todos os arquivos que contêm `com.github.tjake` (lista: `grep -rl`)
 - Modify: `pom.xml`, `jlama-*/pom.xml`, `jlama-net/src/main/proto/JlamaService.proto`, `jlama-tests/src/test/resources/logback-test.xml`, `conf/logback.xml`, `.run/*.xml`
-- Rename: classe `JlamaCli` para `AbyCli`
+- Rename: classe `JlamaCli` para `Bi4jCli`
 
 **Interfaces:**
-- Produces: pacote `ao.bitubi.aby.inference.*`; classe principal `ao.bitubi.aby.inference.cli.AbyCli`; artefatos `aby-inference-*`.
+- Produces: pacote `ao.bitubi.inference4j.*`; classe principal `ao.bitubi.inference4j.cli.Bi4jCli`; artefatos `bitubi-inference-4j-*`.
 
 - [ ] **Step 1: Lista do que será tocado (para comparar depois)**
 
@@ -414,8 +414,8 @@ Expected: `154` (os 154 do levantamento; se diferir, anote o número novo).
 ```bash
 for d in $(find . -type d -path '*/com/github/tjake/jlama' -not -path './.git/*'); do
   base="${d%/com/github/tjake/jlama}"
-  mkdir -p "$base/ao/bitubi/aby"
-  git mv "$d" "$base/ao/bitubi/aby/inference"
+  mkdir -p "$base/ao/bitubi"
+  git mv "$d" "$base/ao/bitubi/inference4j"
 done
 find . -type d -empty -path '*/com/*' -not -path './.git/*' -delete
 ```
@@ -427,9 +427,9 @@ Expected: sem saída.
 
 ```bash
 grep -rl "com\.github\.tjake\.jlama" . --exclude-dir=.git --exclude-dir=target \
-  | xargs sed -i 's/com\.github\.tjake\.jlama/ao.bitubi.aby.inference/g'
+  | xargs sed -i 's/com\.github\.tjake\.jlama/ao.bitubi.inference4j/g'
 grep -rl "com/github/tjake/jlama" . --exclude-dir=.git --exclude-dir=target \
-  | xargs sed -i 's#com/github/tjake/jlama#ao/bitubi/aby/inference#g'
+  | xargs sed -i 's#com/github/tjake/jlama#ao/bitubi/inference4j#g'
 ```
 
 Isto cobre `package`/`import` Java, `Main-Class`, `apiPackage`/`modelPackage` em `jlama-net/pom.xml`, `package` do `.proto`, `logback*.xml` e as exclusões de `MemorySegment.class` no `jlama-native/pom.xml`.
@@ -438,10 +438,10 @@ Isto cobre `package`/`import` Java, `Main-Class`, `apiPackage`/`modelPackage` em
 
 ```bash
 grep -rl "com\.github\.tjake" . --exclude-dir=.git --exclude-dir=target \
-  | xargs sed -i 's#<groupId>com\.github\.tjake</groupId>#<groupId>ao.bitubi.aby-inference</groupId>#g'
+  | xargs sed -i 's#<groupId>com\.github\.tjake</groupId>#<groupId>ao.bitubi</groupId>#g'
 for m in parent core native net cli tests; do
   grep -rl "jlama-$m" . --include=pom.xml --exclude-dir=.git --exclude-dir=target \
-    | xargs sed -i "s#jlama-$m#aby-inference-$m#g"
+    | xargs sed -i "s#jlama-$m#bitubi-inference-4j-$m#g"
 done
 sed -i 's#<revision>0.8.4</revision>#<revision>0.1.0-SNAPSHOT</revision>#' pom.xml
 ```
@@ -449,21 +449,21 @@ sed -i 's#<revision>0.8.4</revision>#<revision>0.1.0-SNAPSHOT</revision>#' pom.x
 Depois renomeie os diretórios de módulo para casar com o `artifactId` e atualize os `<module>` do `pom.xml`:
 
 ```bash
-for m in core native net cli tests; do git mv jlama-$m aby-inference-$m; done
-sed -i 's#<module>jlama-\(core\|native\|net\|cli\|tests\)</module>#<module>aby-inference-\1</module>#' pom.xml
+for m in core native net cli tests; do git mv jlama-$m bitubi-inference-4j-$m; done
+sed -i 's#<module>jlama-\(core\|native\|net\|cli\|tests\)</module>#<module>bitubi-inference-4j-\1</module>#' pom.xml
 ```
 
-Corrija as ocorrências restantes de `jlama-` em caminhos: `grep -rn "jlama-" --include=pom.xml --include=*.sh --include=*.bat --include=*.yaml --include=Dockerfile . | grep -v '^./.git/'` e ajuste cada uma para `aby-inference-` (ex.: `run-cli.sh` usa `./jlama-cli/target/jlama-cli.jar`; `<finalName>` no pom do cli).
+Corrija as ocorrências restantes de `jlama-` em caminhos: `grep -rn "jlama-" --include=pom.xml --include=*.sh --include=*.bat --include=*.yaml --include=Dockerfile . | grep -v '^./.git/'` e ajuste cada uma para `bitubi-inference-4j-` (ex.: `run-cli.sh` usa `./jlama-cli/target/jlama-cli.jar`; `<finalName>` no pom do cli).
 
 - [ ] **Step 5: Renomear a CLI**
 
 ```bash
-git mv aby-inference-cli/src/main/java/ao/bitubi/aby/inference/cli/JlamaCli.java \
-       aby-inference-cli/src/main/java/ao/bitubi/aby/inference/cli/AbyCli.java
-grep -rl "JlamaCli" . --exclude-dir=.git --exclude-dir=target | xargs sed -i 's/JlamaCli/AbyCli/g'
+git mv bitubi-inference-4j-cli/src/main/java/ao/bitubi/inference4j/cli/JlamaCli.java \
+       bitubi-inference-4j-cli/src/main/java/ao/bitubi/inference4j/cli/Bi4jCli.java
+grep -rl "JlamaCli" . --exclude-dir=.git --exclude-dir=target | xargs sed -i 's/JlamaCli/Bi4jCli/g'
 ```
 
-No `AbyCli.java`, mude o nome do comando do picocli para `aby` (procure `name = "jlama"` e troque por `name = "aby"`).
+No `Bi4jCli.java`, mude o nome do comando do picocli para `bi4j` (procure `name = "jlama"` e troque por `name = "aby"`).
 
 - [ ] **Step 6: Nenhuma referência ao pacote antigo sobrou**
 
@@ -479,10 +479,10 @@ Expected: `BUILD SUCCESS`. Se o `jlama-core` falhar por `module-info`/recurso co
 
 Não grave novas referências: o teste compara com as gravadas antes do rename (Task 3).
 
-Run: `SMOKE_MODEL=1 JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B -pl aby-inference-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -E "Tests run|BUILD"`
+Run: `SMOKE_MODEL=1 JAVA_HOME=/home/dumi/.sdkman/candidates/java/25.0.3-amzn ./mvnw -B -pl bitubi-inference-4j-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | grep -E "Tests run|BUILD"`
 Expected: `Tests run: 1, Failures: 0` e `BUILD SUCCESS`, ou seja, o texto gerado é idêntico ao de antes do rename. Se falhar com diferença de texto, o rename quebrou algo (provavelmente o caminho nativo); não regrave a referência.
 
-Em seguida confirme que o caminho nativo carrega: `unzip -l aby-inference-native/target/aby-inference-native-*-linux-x86_64.jar | grep -E "META-INF/versions/25/ao/bitubi"` deve listar classes `cnative` (Review Focus 3).
+Em seguida confirme que o caminho nativo carrega: `unzip -l bitubi-inference-4j-native/target/bitubi-inference-4j-native-*-linux-x86_64.jar | grep -E "META-INF/versions/25/ao/bitubi"` deve listar classes `cnative` (Review Focus 3).
 
 - [ ] **Step 9: Comparação de desempenho**
 
@@ -493,7 +493,7 @@ Expected: `prefill_tok_s` e `decode_tok_s` dentro da faixa mín.-máx. registrad
 
 ```bash
 git add -A
-git commit -m "refactor: renomeia para aby-inference (pacote, groupId, artefatos, CLI)
+git commit -m "refactor: renomeia para bitubi-inference-4j (pacote, groupId, artefatos, CLI)
 ```
 
 ---
@@ -511,7 +511,7 @@ git commit -m "refactor: renomeia para aby-inference (pacote, groupId, artefatos
 - [ ] **Step 1: Criar `NOTICE`**
 
 ```text
-aby-inference
+bitubi-inference-4j
 Copyright 2026 Bitubi Solutions
 
 Este produto inclui software derivado do Jlama
@@ -535,24 +535,24 @@ Atenção: o Spotless aplica este cabeçalho a todo `.java`. Por isso, não rode
 
 - [ ] **Step 3: Metadados do `pom.xml`**
 
-Troque, no `pom.xml` raiz: `<name>Jlama Parent</name>` por `<name>aby-inference Parent</name>`, `<url>` por `https://github.com/bitubi-solutions/aby-inference`, `scm` (`connection`, `developerConnection`, `url`) e `issueManagement` para `bitubi-solutions/aby-inference`, `<description>` por `aby-inference: motor de inferência de LLMs em Java (derivado do Jlama)`. Em `<developers>`, mantenha Jake Luciani e adicione um `<developer>` com `<organization>Bitubi Solutions</organization>`.
+Troque, no `pom.xml` raiz: `<name>Jlama Parent</name>` por `<name>bitubi-inference-4j Parent</name>`, `<url>` por `https://github.com/bitubi-solutions/bitubi-inference-4j`, `scm` (`connection`, `developerConnection`, `url`) e `issueManagement` para `bitubi-solutions/bitubi-inference-4j`, `<description>` por `bitubi-inference-4j: motor de inferência de LLMs em Java (derivado do Jlama)`. Em `<developers>`, mantenha Jake Luciani e adicione um `<developer>` com `<organization>Bitubi Solutions</organization>`.
 
 - [ ] **Step 4: README**
 
-Reescreva o título e a introdução para `aby-inference` e acrescente, logo após os badges, uma seção:
+Reescreva o título e a introdução para `bitubi-inference-4j` e acrescente, logo após os badges, uma seção:
 
 ```markdown
 ## Origem
 
-aby-inference é um fork mantido do [Jlama](https://github.com/tjake/jlama)
+bitubi-inference-4j é um fork mantido do [Jlama](https://github.com/tjake/jlama)
 (© T Jake Luciani e colaboradores, Apache 2.0). Veja o arquivo `NOTICE`.
 ```
 
-Troque os comandos `jlama ...` por `aby ...`, o `groupId` nos exemplos Maven por `ao.bitubi.aby-inference` e os `artifactId` por `aby-inference-*`. Mantenha os ids de modelo `tjake/...` (são nomes do Hugging Face) e o link para `hf.co/tjake`. Remova a instalação por `jbang app install jlama@tjake` e deixe `jbang` como "em breve".
+Troque os comandos `jlama ...` por `bi4j ...`, o `groupId` nos exemplos Maven por `ao.bitubi` e os `artifactId` por `bitubi-inference-4j-*`. Mantenha os ids de modelo `tjake/...` (são nomes do Hugging Face) e o link para `hf.co/tjake`. Remova a instalação por `jbang app install jlama@tjake` e deixe `jbang` como "em breve".
 
 - [ ] **Step 5: Docker e Kubernetes**
 
-Em `Dockerfile`, troque o `LABEL org.opencontainers.image.source` para `https://github.com/bitubi-solutions/aby-inference`. Em `kubernetes/helm/jlama/values.yaml` e `kubernetes/gke_values.yaml`, troque `repository: docker.io/tjake/jlama` por `ghcr.io/bitubi-solutions/aby-inference`. Não toque nos ids de modelo.
+Em `Dockerfile`, troque o `LABEL org.opencontainers.image.source` para `https://github.com/bitubi-solutions/bitubi-inference-4j`. Em `kubernetes/helm/jlama/values.yaml` e `kubernetes/gke_values.yaml`, troque `repository: docker.io/tjake/jlama` por `ghcr.io/bitubi-solutions/bitubi-inference-4j`. Não toque nos ids de modelo.
 
 - [ ] **Step 6: Verificar o critério do spec**
 
@@ -640,13 +640,13 @@ jobs:
       - name: Cache small model
         uses: actions/cache@v4
         with:
-          path: aby-inference-tests/models
+          path: bitubi-inference-4j-tests/models
           key: small-model-qwen2.5-0.5b-jq4
       - name: Smoke test with a small model
         env:
           SMOKE_MODEL: "1"
           SMOKE_RELAXED: "1"
-        run: ./mvnw -B -pl aby-inference-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false
+        run: ./mvnw -B -pl bitubi-inference-4j-tests -am test -Dtest=SmokeTest -Dsurefire.failIfNoSpecifiedTests=false
       - name: Performance snapshot (informational)
         run: |
           docs/benchmarks/run-perf.sh "$JAVA_HOME" | tee perf.txt
@@ -657,7 +657,7 @@ Notas:
 - `SMOKE_RELAXED=1` na CI: as referências de texto foram gravadas na sua máquina e o ponto flutuante pode diferir em outra CPU ou SO, então a CI só exige texto não vazio. A comparação estrita roda localmente (Tasks 3 e 4).
 - O passo de desempenho é informativo (não falha o job): serve para coletar o baseline do Windows e do macOS. Depois da primeira execução verde, copie as linhas `PERF` de cada SO do resumo do job para `docs/benchmarks/baseline-ci-<os>.md`.
 - `macos-latest` é ARM (arm64); `macos-15-intel` é x86_64. **Confirme em https://docs.github.com/actions/using-github-hosted-runners que o rótulo `macos-15-intel` existe**; se não existir, remova-o e registre que macOS Intel não é testado.
-- Se o `aby-inference-native` não compilar em Windows ou em macOS ARM (o `Makefile` usa `gcc`/`make`/`ld`), a falha deve aparecer aqui. Não a esconda com `continue-on-error`: abra uma task própria para o suporte nativo naquele SO.
+- Se o `bitubi-inference-4j-native` não compilar em Windows ou em macOS ARM (o `Makefile` usa `gcc`/`make`/`ld`), a falha deve aparecer aqui. Não a esconda com `continue-on-error`: abra uma task própria para o suporte nativo naquele SO.
 
 - [ ] **Step 3: Validar a sintaxe**
 
@@ -680,8 +680,8 @@ git commit -m "ci: JDK 25 em Linux, Windows e macOS, com teste de fumaça e dese
 - Modify: `.github/workflows/release.yaml`
 
 **Interfaces:**
-- Consumes: groupId `ao.bitubi.aby-inference` e as URLs `scm` da Task 5.
-- Produces: perfil `release` que publica em `https://maven.pkg.github.com/bitubi-solutions/aby-inference`; workflow `Release` manual.
+- Consumes: groupId `ao.bitubi` e as URLs `scm` da Task 5.
+- Produces: perfil `release` que publica em `https://maven.pkg.github.com/bitubi-solutions/bitubi-inference-4j`; workflow `Release` manual.
 
 Decisão do autor: o release no Maven Central fica para depois (exige verificar o domínio `bitubi.ao`, chave GPG e o Central Portal). Por enquanto publica-se no GitHub Packages, que não exige verificação de domínio nem GPG. Limitação a registrar no README: o GitHub Packages exige autenticação (token com `read:packages`) até para ler pacotes públicos, então não serve como distribuição aberta ao público.
 
@@ -694,7 +694,7 @@ No perfil `release` do `pom.xml`: remova `<distributionManagement>` do OSSRH, o 
   <repository>
     <id>github</id>
     <name>GitHub Packages</name>
-    <url>https://maven.pkg.github.com/bitubi-solutions/aby-inference</url>
+    <url>https://maven.pkg.github.com/bitubi-solutions/bitubi-inference-4j</url>
   </repository>
 </distributionManagement>
 ```
@@ -728,7 +728,7 @@ jobs:
         run: ./mvnw -B -DskipTests -Prelease deploy
 ```
 
-Nota sobre as bibliotecas nativas: o job antigo publicava o classificador de cada SO (macOS, Windows) no mesmo repositório de staging. Aqui não há staging: o job acima publica só o classificador do Linux (`linux-x86_64`). Para os demais SOs, adicione depois jobs por SO que rodam `./mvnw -B -Prelease -am -pl aby-inference-native deploy`; antes de fazê-lo, verifique se o GitHub Packages aceita republicar o mesmo POM e JAR principal por outro job (pode responder 409). Registre no README que, no `0.1.0`, só o Linux x86_64 é publicado.
+Nota sobre as bibliotecas nativas: o job antigo publicava o classificador de cada SO (macOS, Windows) no mesmo repositório de staging. Aqui não há staging: o job acima publica só o classificador do Linux (`linux-x86_64`). Para os demais SOs, adicione depois jobs por SO que rodam `./mvnw -B -Prelease -am -pl bitubi-inference-4j-native deploy`; antes de fazê-lo, verifique se o GitHub Packages aceita republicar o mesmo POM e JAR principal por outro job (pode responder 409). Registre no README que, no `0.1.0`, só o Linux x86_64 é publicado.
 
 - [ ] **Step 3: Dry-run local (sem enviar nada)**
 
@@ -769,7 +769,7 @@ Apache License 2.0.
 
 - [ ] **Step 2: Templates**
 
-`.github/ISSUE_TEMPLATE/bug_report.md` com campos: versão do `aby`, JDK (`java -version`), SO e CPU, modelo, comando executado, saída. `feature_request.md` com: problema, proposta, alternativas. `.github/pull_request_template.md` com: resumo, como testar, checklist (`verify` verde, commits assinados).
+`.github/ISSUE_TEMPLATE/bug_report.md` com campos: versão do `bi4j`, JDK (`java -version`), SO e CPU, modelo, comando executado, saída. `feature_request.md` com: problema, proposta, alternativas. `.github/pull_request_template.md` com: resumo, como testar, checklist (`verify` verde, commits assinados).
 
 - [ ] **Step 3: Verificar tudo antes da migração**
 
@@ -786,14 +786,14 @@ git commit -s -m "docs: adiciona CONTRIBUTING com DCO e templates
 - [ ] **Step 5: Migrar o repositório (ação do dono; confirme antes)**
 
 Esta etapa é visível externamente; só execute com autorização explícita do autor. Duas opções:
-(a) Transferir `DumiJDev/Jlama` para a organização na interface do GitHub (Settings, Transfer) e renomear para `aby-inference`;
-(b) criar `bitubi-solutions/aby-inference` vazio e empurrar o histórico.
+(a) Transferir `DumiJDev/Jlama` para a organização na interface do GitHub (Settings, Transfer) e renomear para `bitubi-inference-4j`;
+(b) criar `bitubi-solutions/bitubi-inference-4j` vazio e empurrar o histórico.
 
 Para (b):
 
 ```bash
 git remote rename origin old-origin
-git remote add origin git@github.com:bitubi-solutions/aby-inference.git
+git remote add origin git@github.com:bitubi-solutions/bitubi-inference-4j.git
 git remote add upstream https://github.com/tjake/jlama.git
 git push -u origin foundation/aby-rename
 ```
@@ -802,7 +802,7 @@ Depois abra o PR para `main` na organização e verifique que a CI fica verde no
 
 - [ ] **Step 6: Primeira publicação no GitHub Packages (após o Step 5; confirme com o autor)**
 
-Troque `<revision>` para `0.1.0`, faça commit, crie a tag `v0.1.0` e execute o workflow `Release`. Confira em `https://github.com/orgs/bitubi-solutions/packages` que os artefatos `aby-inference-*` aparecem. Volte `<revision>` para `0.1.1-SNAPSHOT`. O release no Maven Central fica fora deste plano.
+Troque `<revision>` para `0.1.0`, faça commit, crie a tag `v0.1.0` e execute o workflow `Release`. Confira em `https://github.com/orgs/bitubi-solutions/packages` que os artefatos `bitubi-inference-4j-*` aparecem. Volte `<revision>` para `0.1.1-SNAPSHOT`. O release no Maven Central fica fora deste plano.
 
 ---
 
