@@ -28,7 +28,7 @@ import org.junit.Test;
 /** Prints tokens/s for a small model. Informational only; opt-in with PERF_BASELINE=1. */
 public class PerfBaselineTest {
 
-    // Overridable so slow backends (e.g. naive) can run a short measurement: PERF_WARMUP, PERF_RUNS, PERF_MAX_TOKENS
+    // Overridable so slow machines can run a short measurement: PERF_WARMUP, PERF_RUNS, PERF_MAX_TOKENS
     private static final int WARMUP_RUNS = envInt("PERF_WARMUP", 2);
     private static final int MEASURED_RUNS = envInt("PERF_RUNS", 5);
     private static final int MAX_TOKENS = envInt("PERF_MAX_TOKENS", 256);
