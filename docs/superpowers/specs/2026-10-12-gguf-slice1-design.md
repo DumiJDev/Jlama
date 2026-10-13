@@ -1,6 +1,6 @@
 # Suporte a GGUF, fatia 1: Qwen2 com F16, Q8_0 e Q4_0
 
-Data: 2026-10-12. Estado: **aguarda revisão do autor** (nada implementado). Faz parte do sub-projeto 1
+Data: 2026-10-12. Estado: **revisto; decisões do autor da secção 7 aplicadas; falta aprovar o plano** (nada implementado). Faz parte do sub-projeto 1
 (motor e SDK); ver `2026-10-11-bitubi-inference-4j-foundation-design.md`.
 
 ## 1. Intenção
@@ -79,8 +79,22 @@ Configuração `Qwen2Config` a partir dos metadados: `qwen2.context_length`, `em
 
 Os arquivos GGUF de teste (F16 1,27 GB, Q8_0 676 MB, Q4_0 429 MB) são baixados sob demanda e ficam fora do Git; os testes que dependem deles são opt-in por variável de ambiente, como o `SmokeTest`.
 
-## 7. Questões em aberto
+## 7. Decisões do autor (2026-10-13) e achado de kernels
 
-- Mapear o arquivo inteiro ou por tensor? Preferência: por tensor, para não depender do limite de 2 GB.
-- Onde fica o tokenizer GGUF para modelos `llama` (SentencePiece): fora desta fatia; só `gpt2` (BPE de byte) aqui.
-- Para o F16: copiar para o `Float16BufferTensor` ou usar a memória mapeada sem cópia? Decidir no plano depois de medir o tempo de carga.
+Aceitas as recomendações:
+- **Memória das escalas:** Q4_0 e Q8_0 ficam maiores (escala `half` inline vira `float` separada: Q4_0 18 para 20 bytes por bloco, +11%; Q8_0 34 para 36). Aceite na fatia 1.
+- **mmap por tensor** (sem o limite de 2 GB).
+- **F16 copiado** para um tensor interno primeiro; só se passa a mmap sem cópia se o tempo de carga doer.
+- **SentencePiece fora:** só `gpt2` (BPE de byte).
+- Ordem do plano: leitor e escritor de teste, paridade dos pesos, tokenizer, ponta a ponta.
+
+**Achado (verificado no código, `PanamaTensorOperations.batchDotProduct`):** os kernels de GEMM só aceitam, como pesos (`b`), `F32`, `BF16` e `Q4` (com ativação `F32`; `I8` só com `Q4`; `BF16` só com `BF16`). **Não há kernel para pesos F16 nem Q8**; o nativo tem as mesmas 4 combinações (`F32xF32`, `F32xQ4`, `F32xBF16`, `I8xQ4`). Consequências para a fatia:
+- **Q4_0:** funciona com os kernels existentes (Panama e nativo).
+- **Q8_0:** exige kernel novo `F32xQ8` (e `I8xQ8` se a memória de trabalho for I8) no Panama. No nativo, só se for portado; até lá o nativo falha com mensagem clara ou delega ao Panama (decidir no plano, depois de ler como o `NativeSimdTensorOperations` trata combinações sem kernel).
+- **F16:** exige kernel novo `F32xF16`, ou alargar para F32 no carregamento (simples, mas dobra a memória: o 0,5B passa de 1,27 GB para cerca de 2,5 GB). Recomendação: alargar para F32 na fatia 1 como caminho de referência, documentado, e deixar o kernel `F32xF16` para depois.
+- O critério de sucesso (secção 1) mantém F16, Q8_0 e Q4_0, mas o Q8_0 passa a incluir o kernel novo, com teste contra o oráculo escalar (`ScalarReferenceOperations`, como o `TestNativeRemainderTiles`), incluindo blocos de borda.
+
+## 8. Questões em aberto
+
+- Como o nativo trata combinações de tipos sem kernel (falha ou delega)? Verificar no plano.
+- `I8xQ8`: a memória de trabalho I8 é opcional; basta `F32xQ8` na fatia 1? Preferência: sim.
